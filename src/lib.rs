@@ -198,10 +198,9 @@ fn read_chunk<R: Read>(reader: &mut R) -> Result<Chunk, LoadError> {
                 strings.push(string);
             }
             // TODO: Why do we need to consume additional 4 bytes?
-            let _ = reader.read_u8();
-            let _ = reader.read_u8();
-            let _ = reader.read_u8();
-            let _ = reader.read_u8();
+            // Looks like 4 zero bytes.
+            let mut buf = [0u8; 4];
+            try!(reader.read_exact(&mut buf));
             ChunkContent::StringTable {
                 offsets: offsets,
                 strings: strings,
