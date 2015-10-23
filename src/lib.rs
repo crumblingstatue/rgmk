@@ -10,17 +10,6 @@ use std::io::{self, BufReader};
 use std::io::prelude::*;
 use byteorder::{LittleEndian, ReadBytesExt};
 
-#[derive(Debug)]
-pub struct GmkString {
-    buf: Vec<u8>,
-}
-
-impl GmkString {
-    pub fn to_string(&self) -> Result<String, std::string::FromUtf8Error> {
-        String::from_utf8(self.buf.clone())
-    }
-}
-
 quick_error! {
     #[derive(Debug)]
     pub enum StringReadError {
@@ -58,7 +47,7 @@ pub enum ChunkContent {
     Function(Vec<u8>),
     StringTable {
         offsets: Vec<u32>,
-        strings: Vec<GmkString>,
+        strings: Vec<String>,
     },
     Txtr(Vec<u8>),
     Audio(Vec<u8>),
@@ -97,7 +86,7 @@ fn read_into_byte_vec<R: Read>(reader: &mut R, len: usize) -> Result<Vec<u8>, io
     Ok(vec)
 }
 
-fn read_string<R: Read>(reader: &mut R) -> Result<GmkString, StringReadError> {
+fn read_string<R: Read>(reader: &mut R) -> Result<String, StringReadError> {
     let len = try!(reader.read_u32::<LittleEndian>());
     let mut buf = Vec::with_capacity(len as usize);
     unsafe {
@@ -106,7 +95,8 @@ fn read_string<R: Read>(reader: &mut R) -> Result<GmkString, StringReadError> {
     }
     let terminator = try!(reader.read_u8());
     if terminator == 0 {
-        Ok(GmkString { buf: buf })
+        // We assume strings are valid UTF-8, if not, panic.
+        Ok(String::from_utf8(buf).unwrap())
     } else {
         Err(StringReadError::MissingNullTerminator)
     }

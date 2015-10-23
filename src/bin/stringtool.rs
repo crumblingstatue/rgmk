@@ -8,7 +8,7 @@ fn main() {
         for chunk in chunks {
             if let ChunkContent::StringTable { strings, .. } = chunk.content {
                 for string in strings {
-                    println!("{}", string.to_string().unwrap())
+                    println!("{}", string)
                 }
             }
         }
