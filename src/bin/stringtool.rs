@@ -51,6 +51,7 @@ fn main() {
                 match &mode[..] {
                     "dump" => {
                         dump_strings(&table);
+                        return;
                     }
                     "rebuild" => {
                         let strings_path = args.next()
