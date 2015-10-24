@@ -30,6 +30,15 @@ pub struct StringTable {
 }
 
 #[derive(Debug)]
+pub struct FuncData {
+    nameoffset: u32,
+    /// Could be size?
+    unk1: u32,
+    /// Could be data pointer
+    unk2: u32,
+}
+
+#[derive(Debug)]
 pub enum ChunkContent {
     Form(Vec<Chunk>),
     Gen8(Vec<u8>),
@@ -50,7 +59,7 @@ pub enum ChunkContent {
     Tpag(Vec<u8>),
     Code(Vec<u8>),
     Vari(Vec<u8>),
-    Function(Vec<u8>),
+    Function(Vec<FuncData>),
     StringTable(StringTable),
     Txtr(Vec<u8>),
     Audio(Vec<u8>),
@@ -176,7 +185,20 @@ fn read_chunk<R: Read>(reader: &mut R) -> Result<Chunk, LoadError> {
             ChunkContent::Vari(try!(read_into_byte_vec(reader, size as usize)))
         }
         b"FUNC" => {
-            ChunkContent::Function(try!(read_into_byte_vec(reader, size as usize)))
+            let mut remaining = size;
+            let mut funcs = Vec::new();
+            while remaining > 0 {
+                let nameptr = try!(reader.read_u32::<LittleEndian>());
+                let unk1 = try!(reader.read_u32::<LittleEndian>());
+                let unk2 = try!(reader.read_u32::<LittleEndian>());
+                remaining -= 3 * 4;
+                funcs.push(FuncData {
+                    nameoffset: nameptr,
+                    unk1: unk1,
+                    unk2: unk2,
+                });
+            }
+            ChunkContent::Function(funcs)
         }
         b"STRG" => {
             let count = try!(reader.read_u32::<LittleEndian>());
@@ -335,7 +357,11 @@ fn write_chunk<W: Write>(writer: &mut W, chunk: &Chunk) -> Result<(), io::Error>
         ChunkContent::Function(ref vec) => {
             try!(writer.write_all(b"FUNC"));
             try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
-            try!(writer.write_all(vec));
+            for fun in vec {
+                try!(writer.write_u32::<LittleEndian>(fun.nameoffset));
+                try!(writer.write_u32::<LittleEndian>(fun.unk1));
+                try!(writer.write_u32::<LittleEndian>(fun.unk2));
+            }
             Ok(())
         }
         ChunkContent::StringTable(ref table) => {
@@ -405,7 +431,7 @@ impl Chunk {
             ChunkContent::Tpag(ref vec) => vec.len() as i32,
             ChunkContent::Code(ref vec) => vec.len() as i32,
             ChunkContent::Vari(ref vec) => vec.len() as i32,
-            ChunkContent::Function(ref vec) => vec.len() as i32,
+            ChunkContent::Function(ref vec) => vec.len() as i32 * (3 * 4),
             ChunkContent::StringTable(ref table) => {
                 let mut lengths = 0;
                 for s in &table.strings {
