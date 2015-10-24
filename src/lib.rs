@@ -6,9 +6,9 @@ extern crate byteorder;
 
 use std::path::Path;
 use std::fs::File;
-use std::io::{self, BufReader};
+use std::io::{self, BufReader, BufWriter};
 use std::io::prelude::*;
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 quick_error! {
     #[derive(Debug)]
@@ -21,6 +21,12 @@ quick_error! {
         }
         MissingNullTerminator {}
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct StringTable {
+    pub offsets: Vec<u32>,
+    pub strings: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -45,10 +51,7 @@ pub enum ChunkContent {
     Code(Vec<u8>),
     Vari(Vec<u8>),
     Function(Vec<u8>),
-    StringTable {
-        offsets: Vec<u32>,
-        strings: Vec<String>,
-    },
+    StringTable(StringTable),
     Txtr(Vec<u8>),
     Audio(Vec<u8>),
 }
@@ -59,8 +62,8 @@ pub struct Chunk {
     pub size: i32,
 }
 
-const TYPE_ID_LEN: usize = 4;
-const CHUNK_HEADER_LEN: usize = TYPE_ID_LEN + 4;
+pub const TYPE_ID_LEN: usize = 4;
+pub const CHUNK_HEADER_LEN: usize = TYPE_ID_LEN + 4;
 
 quick_error! {
     #[derive(Debug)]
@@ -191,10 +194,10 @@ fn read_chunk<R: Read>(reader: &mut R) -> Result<Chunk, LoadError> {
             // Looks like 4 zero bytes.
             let mut buf = [0u8; 4];
             try!(reader.read_exact(&mut buf));
-            ChunkContent::StringTable {
+            ChunkContent::StringTable(StringTable {
                 offsets: offsets,
                 strings: strings,
-            }
+            })
         }
         b"TXTR" => {
             ChunkContent::Txtr(try!(read_into_byte_vec(reader, size as usize)))
@@ -211,8 +214,209 @@ fn read_chunk<R: Read>(reader: &mut R) -> Result<Chunk, LoadError> {
     })
 }
 
+fn write_chunk<W: Write>(writer: &mut W, chunk: &Chunk) -> Result<(), io::Error> {
+    match chunk.content {
+        ChunkContent::Form(ref chunks) => {
+            try!(writer.write_all(b"FORM"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            for chunk in chunks.iter() {
+                try!(write_chunk(writer, chunk));
+            }
+            Ok(())
+        }
+        ChunkContent::Gen8(ref vec) => {
+            try!(writer.write_all(b"GEN8"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Optn(ref vec) => {
+            try!(writer.write_all(b"OPTN"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Extn(ref vec) => {
+            try!(writer.write_all(b"EXTN"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Sound(ref vec) => {
+            try!(writer.write_all(b"SOND"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Agrp(ref vec) => {
+            try!(writer.write_all(b"AGRP"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Sprite(ref vec) => {
+            try!(writer.write_all(b"SPRT"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Background(ref vec) => {
+            try!(writer.write_all(b"BGND"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Path(ref vec) => {
+            try!(writer.write_all(b"PATH"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Script(ref vec) => {
+            try!(writer.write_all(b"SCPT"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Shader(ref vec) => {
+            try!(writer.write_all(b"SHDR"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Font(ref vec) => {
+            try!(writer.write_all(b"FONT"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Timeline(ref vec) => {
+            try!(writer.write_all(b"TMLN"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Object(ref vec) => {
+            try!(writer.write_all(b"OBJT"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Room(ref vec) => {
+            try!(writer.write_all(b"ROOM"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Dafl(ref vec) => {
+            try!(writer.write_all(b"DAFL"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Tpag(ref vec) => {
+            try!(writer.write_all(b"TPAG"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Code(ref vec) => {
+            try!(writer.write_all(b"CODE"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Vari(ref vec) => {
+            try!(writer.write_all(b"VARI"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Function(ref vec) => {
+            try!(writer.write_all(b"FUNC"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::StringTable(ref table) => {
+            try!(writer.write_all(b"STRG"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_u32::<LittleEndian>(table.strings.len() as u32));
+            for offs in &table.offsets {
+                try!(writer.write_u32::<LittleEndian>(*offs));
+            }
+            for string in &table.strings {
+                try!(writer.write_u32::<LittleEndian>(string.len() as u32));
+                try!(writer.write_all(string.as_bytes()));
+                try!(writer.write_u8(0));
+            }
+            // Required padding
+            try!(writer.write_all(&[0u8; 4]));
+            Ok(())
+        }
+        ChunkContent::Txtr(ref vec) => {
+            try!(writer.write_all(b"TXTR"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+        ChunkContent::Audio(ref vec) => {
+            try!(writer.write_all(b"AUDO"));
+            try!(writer.write_i32::<LittleEndian>(chunk.content_len()));
+            try!(writer.write_all(vec));
+            Ok(())
+        }
+    }
+}
+
 pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Chunk, LoadError> {
     let file = try!(File::open(path));
     let mut reader = BufReader::new(file);
     read_chunk(&mut reader)
+}
+
+impl Chunk {
+    pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), io::Error> {
+        let file = try!(File::create(path));
+        let mut writer = BufWriter::new(file);
+        write_chunk(&mut writer, self)
+    }
+    pub fn content_len(&self) -> i32 {
+        match self.content {
+            ChunkContent::Form(ref chunks) => {
+                chunks.iter().fold(0,
+                                   |acc, chunk| acc + chunk.content_len() + CHUNK_HEADER_LEN as i32)
+            }
+            ChunkContent::Gen8(ref vec) => vec.len() as i32,
+            ChunkContent::Optn(ref vec) => vec.len() as i32,
+            ChunkContent::Extn(ref vec) => vec.len() as i32,
+            ChunkContent::Sound(ref vec) => vec.len() as i32,
+            ChunkContent::Agrp(ref vec) => vec.len() as i32,
+            ChunkContent::Sprite(ref vec) => vec.len() as i32,
+            ChunkContent::Background(ref vec) => vec.len() as i32,
+            ChunkContent::Path(ref vec) => vec.len() as i32,
+            ChunkContent::Script(ref vec) => vec.len() as i32,
+            ChunkContent::Shader(ref vec) => vec.len() as i32,
+            ChunkContent::Font(ref vec) => vec.len() as i32,
+            ChunkContent::Timeline(ref vec) => vec.len() as i32,
+            ChunkContent::Object(ref vec) => vec.len() as i32,
+            ChunkContent::Room(ref vec) => vec.len() as i32,
+            ChunkContent::Dafl(ref vec) => vec.len() as i32,
+            ChunkContent::Tpag(ref vec) => vec.len() as i32,
+            ChunkContent::Code(ref vec) => vec.len() as i32,
+            ChunkContent::Vari(ref vec) => vec.len() as i32,
+            ChunkContent::Function(ref vec) => vec.len() as i32,
+            ChunkContent::StringTable(ref table) => {
+                let mut lengths = 0;
+                for s in &table.strings {
+                    // + 1 for null terminator
+                    lengths += s.len() + 1;
+                }
+                // +4 at end for zero padding
+                (4 + (table.offsets.len() * 4) + lengths + 4) as i32
+            }
+            ChunkContent::Txtr(ref vec) => vec.len() as i32,
+            ChunkContent::Audio(ref vec) => vec.len() as i32,
+        }
+    }
 }
