@@ -13,14 +13,11 @@ fn main() {
         file.read_to_end(&mut vec).unwrap();
         vec
     };
-    println!("Loaded file");
     let root = rgmk::read_chunk(&mut BufReader::new(&original[..])).unwrap();
     let mut new: Vec<u8> = Vec::with_capacity(original.len());
     unsafe {
         new.set_len(original.len());
     }
     rgmk::write_chunk(&mut BufWriter::new(&mut new[..]), &root).unwrap();
-    println!("Written chunk");
     assert_eq!(original, new);
-    println!("Compared");
 }
