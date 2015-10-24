@@ -114,7 +114,7 @@ fn read_string<R: Read>(reader: &mut R) -> Result<String, StringReadError> {
     }
 }
 
-fn read_chunk<R: Read>(reader: &mut R) -> Result<Chunk, LoadError> {
+pub fn read_chunk<R: Read>(reader: &mut R) -> Result<Chunk, LoadError> {
     let mut type_id = [0u8; TYPE_ID_LEN];
     try!(reader.read_exact(&mut type_id));
     let size = try!(reader.read_i32::<LittleEndian>());
@@ -236,7 +236,7 @@ fn read_chunk<R: Read>(reader: &mut R) -> Result<Chunk, LoadError> {
     })
 }
 
-fn write_chunk<W: Write>(writer: &mut W, chunk: &Chunk) -> Result<(), io::Error> {
+pub fn write_chunk<W: Write>(writer: &mut W, chunk: &Chunk) -> Result<(), io::Error> {
     match chunk.content {
         ChunkContent::Form(ref chunks) => {
             try!(writer.write_all(b"FORM"));
