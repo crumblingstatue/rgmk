@@ -409,6 +409,8 @@ impl Chunk {
             ChunkContent::StringTable(ref table) => {
                 let mut lengths = 0;
                 for s in &table.strings {
+                    // The length denominator before the string
+                    lengths += 4;
                     // + 1 for null terminator
                     lengths += s.len() + 1;
                 }
