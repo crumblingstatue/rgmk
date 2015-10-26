@@ -33,8 +33,8 @@ pub struct GameData {
     tpag: Tpag,
     code: Code,
     vari: Vari,
-    functions: Functions,
-    strings: Strings,
+    pub functions: Functions,
+    pub strings: Strings,
     textures: Textures,
     audio: Audio,
 }
@@ -159,21 +159,21 @@ pub struct Vari {
 /// A game maker function.
 pub struct Function {
     /// Index of the name of the function in the strings section.
-    name_index: usize,
+    pub name_index: usize,
     unknown1: u32, // Purpose unknown
     unknown2: u32, // Purpose unknown
 }
 
 /// A collection of functions.
 pub struct Functions {
-    functions: Vec<Function>,
+    pub functions: Vec<Function>,
 }
 
 /// A collection of strings.
 ///
 /// All strings are assumed to be valid UTF-8.
 pub struct Strings {
-    strings: Vec<String>,
+    pub strings: Vec<String>,
 }
 
 /// A collection of textures.
