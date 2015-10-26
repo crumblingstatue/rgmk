@@ -88,27 +88,19 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
 }
 
 fn form_content_len(data: &GameData) -> i32 {
-    data.metadata.len() + CHUNK_HEADER_LEN +
-    data.optn.len() + CHUNK_HEADER_LEN +
-    data.extn.len() + CHUNK_HEADER_LEN +
-    data.sounds.len() + CHUNK_HEADER_LEN +
+    data.metadata.len() + CHUNK_HEADER_LEN + data.optn.len() + CHUNK_HEADER_LEN +
+    data.extn.len() + CHUNK_HEADER_LEN + data.sounds.len() + CHUNK_HEADER_LEN +
     data.agrp.as_ref().map_or(0, |a| a.len()) + CHUNK_HEADER_LEN +
-    data.sprites.len() + CHUNK_HEADER_LEN +
-    data.backgrounds.len() + CHUNK_HEADER_LEN +
-    data.paths.len() + CHUNK_HEADER_LEN +
-    data.scripts.len() + CHUNK_HEADER_LEN +
-    data.shaders.len() + CHUNK_HEADER_LEN +
-    data.fonts.len() + CHUNK_HEADER_LEN +
-    data.timelines.len() + CHUNK_HEADER_LEN +
-    data.objects.len() + CHUNK_HEADER_LEN +
-    data.rooms.len() + CHUNK_HEADER_LEN +
-    data.dafl.len() + CHUNK_HEADER_LEN +
-    data.tpag.len() + CHUNK_HEADER_LEN +
-    data.code.len() + CHUNK_HEADER_LEN +
-    data.vari.len() + CHUNK_HEADER_LEN +
-    data.functions.len() + CHUNK_HEADER_LEN +
-    data.strings.len() + CHUNK_HEADER_LEN +
-    data.textures.len() + CHUNK_HEADER_LEN +
+    data.sprites.len() + CHUNK_HEADER_LEN + data.backgrounds.len() + CHUNK_HEADER_LEN +
+    data.paths.len() + CHUNK_HEADER_LEN + data.scripts.len() +
+    CHUNK_HEADER_LEN + data.shaders.len() + CHUNK_HEADER_LEN + data.fonts.len() +
+    CHUNK_HEADER_LEN +
+    data.timelines.len() + CHUNK_HEADER_LEN + data.objects.len() + CHUNK_HEADER_LEN +
+    data.rooms.len() + CHUNK_HEADER_LEN + data.dafl.len() +
+    CHUNK_HEADER_LEN + data.tpag.len() + CHUNK_HEADER_LEN + data.code.len() + CHUNK_HEADER_LEN +
+    data.vari.len() + CHUNK_HEADER_LEN + data.functions.len() +
+    CHUNK_HEADER_LEN + data.strings.len() + CHUNK_HEADER_LEN + data.textures.len() +
+    CHUNK_HEADER_LEN +
     data.audio.len() + CHUNK_HEADER_LEN
 }
 
@@ -241,12 +233,7 @@ impl Chunk for Strings {
         // Looks like 4 zero bytes.
         let mut buf = [0u8; 4];
         try!(reader.read_exact(&mut buf));
-        Ok((
-            Strings {
-                strings: strings,
-            },
-            offsets
-        ))
+        Ok((Strings { strings: strings }, offsets))
     }
     fn write<W: Write>(&self, writer: &mut W, offset: i32) -> Result<(), io::Error> {
         try!(writer.write_all(Self::TYPE_ID));

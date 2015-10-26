@@ -23,8 +23,8 @@ fn main() {
     for (i, (o, n)) in original[..].iter().zip(new[..].iter()).enumerate() {
         if o != n {
             use byteorder::{ReadBytesExt, LittleEndian};
-            let orig = (&original[i..i+4]).read_u32::<LittleEndian>().unwrap();
-            let new = (&new[i..i+4]).read_u32::<LittleEndian>().unwrap();
+            let orig = (&original[i..i + 4]).read_u32::<LittleEndian>().unwrap();
+            let new = (&new[i..i + 4]).read_u32::<LittleEndian>().unwrap();
             panic!("Difference at offset {}. orig {} vs new {}", i, orig, new);
         }
     }
