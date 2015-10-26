@@ -156,9 +156,17 @@ pub struct Vari {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
+/// A game maker function.
+pub struct Function {
+    /// Index of the name of the function in the strings section.
+    name_index: usize,
+    unknown1: u32, // Purpose unknown
+    unknown2: u32, // Purpose unknown
+}
+
 /// A collection of functions.
 pub struct Functions {
-    raw: Vec<u8>, // Data not analyzed yet
+    functions: Vec<Function>,
 }
 
 /// A collection of strings.

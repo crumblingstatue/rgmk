@@ -57,8 +57,16 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
     let tpag = try!(Tpag::read(reader));
     let code = try!(Code::read(reader));
     let vari = try!(Vari::read(reader));
-    let functions = try!(Functions::read(reader));
-    let (strings, _offsets) = try!(Strings::read(reader));
+    let (mut functions, fun_name_offsets) = try!(Functions::read(reader));
+    let (strings, offsets) = try!(Strings::read(reader));
+    for (i, off) in fun_name_offsets.into_iter().enumerate() {
+        for (j, &soff) in offsets.iter().enumerate() {
+            if off - 4 == soff {
+                functions.functions[i].name_index = j;
+                break;
+            }
+        }
+    }
     let textures = try!(Textures::read(reader));
     let audio = try!(Audio::read(reader));
     Ok(GameData {
@@ -110,59 +118,74 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error>
     let len = form_content_len(data);
     try!(writer.write_i32::<LittleEndian>(len));
     offset += CHUNK_HEADER_LEN;
-    try!(data.metadata.write(writer, offset));
+    try!(data.metadata.write(writer, ()));
     offset += data.metadata.len() + CHUNK_HEADER_LEN;
-    try!(data.optn.write(writer, offset));
+    try!(data.optn.write(writer, ()));
     offset += data.optn.len() + CHUNK_HEADER_LEN;
-    try!(data.extn.write(writer, offset));
+    try!(data.extn.write(writer, ()));
     offset += data.extn.len() + CHUNK_HEADER_LEN;
-    try!(data.sounds.write(writer, offset));
+    try!(data.sounds.write(writer, ()));
     offset += data.sounds.len() + CHUNK_HEADER_LEN;
     if let Some(ref agrp) = data.agrp {
-        try!(agrp.write(writer, offset));
+        try!(agrp.write(writer, ()));
         offset += agrp.len() + CHUNK_HEADER_LEN;
     }
-    try!(data.sprites.write(writer, offset));
+    try!(data.sprites.write(writer, ()));
     offset += data.sprites.len() + CHUNK_HEADER_LEN;
-    try!(data.backgrounds.write(writer, offset));
+    try!(data.backgrounds.write(writer, ()));
     offset += data.backgrounds.len() + CHUNK_HEADER_LEN;
-    try!(data.paths.write(writer, offset));
+    try!(data.paths.write(writer, ()));
     offset += data.paths.len() + CHUNK_HEADER_LEN;
-    try!(data.scripts.write(writer, offset));
+    try!(data.scripts.write(writer, ()));
     offset += data.scripts.len() + CHUNK_HEADER_LEN;
-    try!(data.shaders.write(writer, offset));
+    try!(data.shaders.write(writer, ()));
     offset += data.shaders.len() + CHUNK_HEADER_LEN;
-    try!(data.fonts.write(writer, offset));
+    try!(data.fonts.write(writer, ()));
     offset += data.fonts.len() + CHUNK_HEADER_LEN;
-    try!(data.timelines.write(writer, offset));
+    try!(data.timelines.write(writer, ()));
     offset += data.timelines.len() + CHUNK_HEADER_LEN;
-    try!(data.objects.write(writer, offset));
+    try!(data.objects.write(writer, ()));
     offset += data.objects.len() + CHUNK_HEADER_LEN;
-    try!(data.rooms.write(writer, offset));
+    try!(data.rooms.write(writer, ()));
     offset += data.rooms.len() + CHUNK_HEADER_LEN;
-    try!(data.dafl.write(writer, offset));
+    try!(data.dafl.write(writer, ()));
     offset += data.dafl.len() + CHUNK_HEADER_LEN;
-    try!(data.tpag.write(writer, offset));
+    try!(data.tpag.write(writer, ()));
     offset += data.tpag.len() + CHUNK_HEADER_LEN;
-    try!(data.code.write(writer, offset));
+    try!(data.code.write(writer, ()));
     offset += data.code.len() + CHUNK_HEADER_LEN;
-    try!(data.vari.write(writer, offset));
+    try!(data.vari.write(writer, ()));
     offset += data.vari.len() + CHUNK_HEADER_LEN;
-    try!(data.functions.write(writer, offset));
+    try!(data.functions.write(writer,
+                              string_offsets(&data.strings,
+                                             offset + data.functions.len() + CHUNK_HEADER_LEN)));
     offset += data.functions.len() + CHUNK_HEADER_LEN;
     try!(data.strings.write(writer, offset));
-    offset += data.strings.len() + CHUNK_HEADER_LEN;
-    try!(data.textures.write(writer, offset));
-    offset += data.textures.len() + CHUNK_HEADER_LEN;
-    try!(data.audio.write(writer, offset));
+    // offset += data.strings.len() + CHUNK_HEADER_LEN;
+    try!(data.textures.write(writer, ()));
+    // offset += data.textures.len() + CHUNK_HEADER_LEN;
+    try!(data.audio.write(writer, ()));
     Ok(())
+}
+
+fn string_offsets(strings: &Strings, base_offset: i32) -> Vec<i32> {
+    let mut offset = base_offset + CHUNK_HEADER_LEN + 4 + (strings.strings.len() as i32 * 4);
+    let mut offsets = Vec::new();
+    for string in &strings.strings {
+        // +4 because functions point right into the string
+        offsets.push(offset + 4);
+        offset += (string.len() + 1) as i32 + 4;
+    }
+    offsets
 }
 
 trait Chunk {
     const TYPE_ID: &'static [u8; 4];
     type ReadOutput = Self;
+    /// Additional inormation needed in order to be able to write correct output.
+    type WriteInput = ();
     fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
-    fn write<W: Write>(&self, writer: &mut W, offset: i32) -> Result<(), io::Error>;
+    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> Result<(), io::Error>;
     fn len(&self) -> i32;
 }
 
@@ -176,7 +199,7 @@ macro_rules! unk_chunk {
                     raw: try!(read_into_byte_vec(reader, chunk_header.size))
                 })
             }
-            fn write<W: Write>(&self, writer: &mut W, _offset: i32) -> Result<(), io::Error> {
+            fn write<W: Write>(&self, writer: &mut W, _input: ()) -> Result<(), io::Error> {
                 try!(writer.write_all(Self::TYPE_ID));
                 try!(writer.write_i32::<LittleEndian>(self.len()));
                 try!(writer.write_all(&self.raw));
@@ -207,13 +230,52 @@ unk_chunk!(Dafl, b"DAFL");
 unk_chunk!(Tpag, b"TPAG");
 unk_chunk!(Code, b"CODE");
 unk_chunk!(Vari, b"VARI");
-unk_chunk!(Functions, b"FUNC");
 unk_chunk!(Textures, b"TXTR");
 unk_chunk!(Audio, b"AUDO");
+
+impl Chunk for Functions {
+    const TYPE_ID: &'static [u8; 4] = b"FUNC";
+    type ReadOutput = (Self, Vec<u32>);
+    type WriteInput = Vec<i32>;
+    fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+        let header = try!(get_chunk_header(reader, Self::TYPE_ID));
+        let mut offsets = Vec::new();
+        let mut funs = Vec::new();
+        let mut remaining = header.size;
+        while remaining > 0 {
+            let offset = try!(reader.read_u32::<LittleEndian>());
+            let unk1 = try!(reader.read_u32::<LittleEndian>());
+            let unk2 = try!(reader.read_u32::<LittleEndian>());
+            funs.push(Function {
+                name_index: 0,
+                unknown1: unk1,
+                unknown2: unk2,
+            });
+            offsets.push(offset);
+            remaining -= 3 * 4;
+        }
+        Ok((Functions { functions: funs }, offsets))
+    }
+    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> Result<(), io::Error> {
+        try!(writer.write_all(Self::TYPE_ID));
+        let len = self.len();
+        try!(writer.write_i32::<LittleEndian>(len));
+        for fun in &self.functions {
+            try!(writer.write_u32::<LittleEndian>(input[fun.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(fun.unknown1));
+            try!(writer.write_u32::<LittleEndian>(fun.unknown2));
+        }
+        Ok(())
+    }
+    fn len(&self) -> i32 {
+        (self.functions.len() * (3 * 4)) as i32
+    }
+}
 
 impl Chunk for Strings {
     const TYPE_ID: &'static [u8; 4] = b"STRG";
     type ReadOutput = (Self, Vec<u32>);
+    type WriteInput = i32;
     fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let count = try!(reader.read_u32::<LittleEndian>());
@@ -238,8 +300,6 @@ impl Chunk for Strings {
         try!(writer.write_i32::<LittleEndian>(self.len()));
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
         let mut string_offset = offset + CHUNK_HEADER_LEN + 4 + (self.strings.len() as i32 * 4);
-        // Fucking up at first absolute offset
-        // orig 10918688 vs new 10794188
         for string in &self.strings {
             try!(writer.write_u32::<LittleEndian>(string_offset as u32));
             string_offset += (string.len() + 1) as i32 + 4;
