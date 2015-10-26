@@ -64,6 +64,22 @@ impl GameData {
     pub fn replace_string_at<S: Into<String>>(&mut self, index: usize, with: S) {
         self.strings.strings[index] = with.into();
     }
+    pub fn window_width(&self) -> u32 {
+        self.metadata.window_width
+    }
+    pub fn window_height(&self) -> u32 {
+        self.metadata.window_height
+    }
+    pub fn set_window_dimensions(&mut self, width: u32, height: u32) {
+        self.metadata.window_width = width;
+        self.metadata.window_height = height;
+    }
+    pub fn window_title(&self) -> &str {
+        &self.strings.strings[self.metadata.window_title_index]
+    }
+    pub fn set_window_title<S: Into<String>>(&mut self, new: S) {
+        self.strings.strings[self.metadata.window_title_index] = new.into();
+    }
 }
 
 /// Contains various metadata.
