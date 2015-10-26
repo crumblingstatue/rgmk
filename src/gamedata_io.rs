@@ -163,7 +163,6 @@ trait Chunk {
     const TYPE_ID: &'static [u8; 4];
     type ReadOutput = Self;
     fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
-    /// Returns how many bytes were written
     fn write<W: Write>(&self, writer: &mut W, offset: i32) -> Result<(), io::Error>;
     fn len(&self) -> i32;
 }
