@@ -32,7 +32,7 @@ pub struct GameData {
     dafl: Dafl,
     tpag: Tpag,
     code: Code,
-    vari: Vari,
+    pub variables: Variables,
     pub functions: Functions,
     pub strings: Strings,
     textures: Textures,
@@ -151,9 +151,17 @@ pub struct Code {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
-/// Variable data?
-pub struct Vari {
-    raw: Vec<u8>, // Data not analyzed yet
+/// A game maker variable.
+pub struct Variable {
+    /// Index of the name of the variable in the strings section.
+    pub name_index: usize,
+    unknown1: u32, // Purpose unknown
+    unknown2: u32, // Purpose unknown
+}
+
+/// A collection of variables.
+pub struct Variables {
+    pub variables: Vec<Variable>,
 }
 
 /// A game maker function.

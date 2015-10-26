@@ -56,9 +56,17 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
     let dafl = try!(Dafl::read(reader));
     let tpag = try!(Tpag::read(reader));
     let code = try!(Code::read(reader));
-    let vari = try!(Vari::read(reader));
+    let (mut variables, var_name_offsets) = try!(Variables::read(reader));
     let (mut functions, fun_name_offsets) = try!(Functions::read(reader));
     let (strings, offsets) = try!(Strings::read(reader));
+    for (i, off) in var_name_offsets.into_iter().enumerate() {
+        for (j, &soff) in offsets.iter().enumerate() {
+            if off - 4 == soff {
+                variables.variables[i].name_index = j;
+                break;
+            }
+        }
+    }
     for (i, off) in fun_name_offsets.into_iter().enumerate() {
         for (j, &soff) in offsets.iter().enumerate() {
             if off - 4 == soff {
@@ -87,7 +95,7 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
         dafl: dafl,
         tpag: tpag,
         code: code,
-        vari: vari,
+        variables: variables,
         functions: functions,
         strings: strings,
         textures: textures,
@@ -99,17 +107,17 @@ fn form_content_len(data: &GameData) -> i32 {
     data.metadata.len() + CHUNK_HEADER_LEN + data.optn.len() + CHUNK_HEADER_LEN +
     data.extn.len() + CHUNK_HEADER_LEN + data.sounds.len() + CHUNK_HEADER_LEN +
     data.audio_groups.as_ref().map_or(0, |a| a.len()) + CHUNK_HEADER_LEN +
-    data.sprites.len() + CHUNK_HEADER_LEN + data.backgrounds.len() + CHUNK_HEADER_LEN +
-    data.paths.len() + CHUNK_HEADER_LEN + data.scripts.len() +
-    CHUNK_HEADER_LEN + data.shaders.len() + CHUNK_HEADER_LEN + data.fonts.len() +
+    data.sprites.len() + CHUNK_HEADER_LEN + data.backgrounds.len() +
     CHUNK_HEADER_LEN +
+    data.paths.len() + CHUNK_HEADER_LEN + data.scripts.len() +
+    CHUNK_HEADER_LEN + data.shaders.len() +
+    CHUNK_HEADER_LEN + data.fonts.len() + CHUNK_HEADER_LEN +
     data.timelines.len() + CHUNK_HEADER_LEN + data.objects.len() + CHUNK_HEADER_LEN +
     data.rooms.len() + CHUNK_HEADER_LEN + data.dafl.len() +
     CHUNK_HEADER_LEN + data.tpag.len() + CHUNK_HEADER_LEN + data.code.len() + CHUNK_HEADER_LEN +
-    data.vari.len() + CHUNK_HEADER_LEN + data.functions.len() +
+    data.variables.len() + CHUNK_HEADER_LEN + data.functions.len() +
     CHUNK_HEADER_LEN + data.strings.len() + CHUNK_HEADER_LEN + data.textures.len() +
-    CHUNK_HEADER_LEN +
-    data.audio.len() + CHUNK_HEADER_LEN
+    CHUNK_HEADER_LEN + data.audio.len() + CHUNK_HEADER_LEN
 }
 
 pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error> {
@@ -154,8 +162,12 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error>
     offset += data.tpag.len() + CHUNK_HEADER_LEN;
     try!(data.code.write(writer, ()));
     offset += data.code.len() + CHUNK_HEADER_LEN;
-    try!(data.vari.write(writer, ()));
-    offset += data.vari.len() + CHUNK_HEADER_LEN;
+    try!(data.variables.write(writer,
+                              string_offsets(&data.strings,
+                                             offset + data.variables.len() + CHUNK_HEADER_LEN +
+                                             data.functions.len() +
+                                             CHUNK_HEADER_LEN)));
+    offset += data.variables.len() + CHUNK_HEADER_LEN;
     try!(data.functions.write(writer,
                               string_offsets(&data.strings,
                                              offset + data.functions.len() + CHUNK_HEADER_LEN)));
@@ -229,9 +241,47 @@ unk_chunk!(Rooms, b"ROOM");
 unk_chunk!(Dafl, b"DAFL");
 unk_chunk!(Tpag, b"TPAG");
 unk_chunk!(Code, b"CODE");
-unk_chunk!(Vari, b"VARI");
 unk_chunk!(Textures, b"TXTR");
 unk_chunk!(Audio, b"AUDO");
+
+impl Chunk for Variables {
+    const TYPE_ID: &'static [u8; 4] = b"VARI";
+    type ReadOutput = (Self, Vec<u32>);
+    type WriteInput = Vec<i32>;
+    fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+        let header = try!(get_chunk_header(reader, Self::TYPE_ID));
+        let mut offsets = Vec::new();
+        let mut vars = Vec::new();
+        let mut remaining = header.size;
+        while remaining > 0 {
+            let offset = try!(reader.read_u32::<LittleEndian>());
+            let unk1 = try!(reader.read_u32::<LittleEndian>());
+            let unk2 = try!(reader.read_u32::<LittleEndian>());
+            vars.push(Variable {
+                name_index: 0,
+                unknown1: unk1,
+                unknown2: unk2,
+            });
+            offsets.push(offset);
+            remaining -= 3 * 4;
+        }
+        Ok((Variables { variables: vars }, offsets))
+    }
+    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> Result<(), io::Error> {
+        try!(writer.write_all(Self::TYPE_ID));
+        let len = self.len();
+        try!(writer.write_i32::<LittleEndian>(len));
+        for var in &self.variables {
+            try!(writer.write_u32::<LittleEndian>(input[var.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(var.unknown1));
+            try!(writer.write_u32::<LittleEndian>(var.unknown2));
+        }
+        Ok(())
+    }
+    fn len(&self) -> i32 {
+        (self.variables.len() * (3 * 4)) as i32
+    }
+}
 
 impl Chunk for Functions {
     const TYPE_ID: &'static [u8; 4] = b"FUNC";
