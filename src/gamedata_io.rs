@@ -43,7 +43,7 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
     let optn = try!(Optn::read(reader));
     let extn = try!(Extn::read(reader));
     let sounds = try!(Sounds::read(reader));
-    let agrp = try!(Agrp::read(reader));
+    let audio_groups = try!(AudioGroups::read(reader));
     let sprites = try!(Sprites::read(reader));
     let backgrounds = try!(Backgrounds::read(reader));
     let paths = try!(Paths::read(reader));
@@ -74,7 +74,7 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
         optn: optn,
         extn: extn,
         sounds: sounds,
-        agrp: Some(agrp),
+        audio_groups: Some(audio_groups),
         sprites: sprites,
         backgrounds: backgrounds,
         paths: paths,
@@ -98,7 +98,7 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
 fn form_content_len(data: &GameData) -> i32 {
     data.metadata.len() + CHUNK_HEADER_LEN + data.optn.len() + CHUNK_HEADER_LEN +
     data.extn.len() + CHUNK_HEADER_LEN + data.sounds.len() + CHUNK_HEADER_LEN +
-    data.agrp.as_ref().map_or(0, |a| a.len()) + CHUNK_HEADER_LEN +
+    data.audio_groups.as_ref().map_or(0, |a| a.len()) + CHUNK_HEADER_LEN +
     data.sprites.len() + CHUNK_HEADER_LEN + data.backgrounds.len() + CHUNK_HEADER_LEN +
     data.paths.len() + CHUNK_HEADER_LEN + data.scripts.len() +
     CHUNK_HEADER_LEN + data.shaders.len() + CHUNK_HEADER_LEN + data.fonts.len() +
@@ -126,7 +126,7 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error>
     offset += data.extn.len() + CHUNK_HEADER_LEN;
     try!(data.sounds.write(writer, ()));
     offset += data.sounds.len() + CHUNK_HEADER_LEN;
-    if let Some(ref agrp) = data.agrp {
+    if let Some(ref agrp) = data.audio_groups {
         try!(agrp.write(writer, ()));
         offset += agrp.len() + CHUNK_HEADER_LEN;
     }
@@ -216,7 +216,7 @@ unk_chunk!(MetaData, b"GEN8");
 unk_chunk!(Optn, b"OPTN");
 unk_chunk!(Extn, b"EXTN");
 unk_chunk!(Sounds, b"SOND");
-unk_chunk!(Agrp, b"AGRP");
+unk_chunk!(AudioGroups, b"AGRP");
 unk_chunk!(Sprites, b"SPRT");
 unk_chunk!(Backgrounds, b"BGND");
 unk_chunk!(Paths, b"PATH");

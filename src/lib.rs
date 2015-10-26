@@ -19,7 +19,7 @@ pub struct GameData {
     optn: Optn,
     extn: Extn,
     sounds: Sounds,
-    agrp: Option<Agrp>,
+    audio_groups: Option<AudioGroups>,
     sprites: Sprites,
     backgrounds: Backgrounds,
     paths: Paths,
@@ -86,8 +86,8 @@ pub struct Sounds {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
-/// Purpose unknown. Not present in all games.
-pub struct Agrp {
+/// Collection of audio groups. Not present in all games.
+pub struct AudioGroups {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
