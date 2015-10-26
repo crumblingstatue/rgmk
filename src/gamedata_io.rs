@@ -108,7 +108,6 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error>
     let mut offset = 0;
     try!(writer.write_all(b"FORM"));
     let len = form_content_len(data);
-    assert_eq!(len, 56291302);
     try!(writer.write_i32::<LittleEndian>(len));
     offset += CHUNK_HEADER_LEN;
     try!(data.metadata.write(writer, offset));

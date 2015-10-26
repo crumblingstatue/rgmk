@@ -52,6 +52,18 @@ impl GameData {
     pub fn write_to_writer<W: Write>(&self, writer: &mut W) -> Result<(), io::Error> {
         gamedata_io::write(self, writer)
     }
+    pub fn save_to_file<P: AsRef<path::Path>>(&self, path: &P) -> Result<(), io::Error> {
+        use std::fs::File;
+        use std::io::BufWriter;
+        let file = try!(File::create(path));
+        self.write_to_writer(&mut BufWriter::new(file))
+    }
+    pub fn string_at(&self, index: usize) -> &str {
+        &self.strings.strings[index]
+    }
+    pub fn replace_string_at<S: Into<String>>(&mut self, index: usize, with: S) {
+        self.strings.strings[index] = with.into();
+    }
 }
 
 /// Contains various metadata.
