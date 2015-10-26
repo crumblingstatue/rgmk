@@ -15,7 +15,7 @@ use std::path;
 ///
 /// This is the collective information acquired from "data.win".
 pub struct GameData {
-    metadata: MetaData,
+    pub metadata: MetaData,
     optn: Optn,
     extn: Extn,
     sounds: Sounds,
@@ -68,7 +68,33 @@ impl GameData {
 
 /// Contains various metadata.
 pub struct MetaData {
-    raw: Vec<u8>, // Data not analyzed yet
+    unk1: u32, // Purpose unknown
+    game_id_1_index: usize, // Some kind of game id
+    default_index: usize, // Points to "Default"
+    unk2: u32,
+    unk3: u32,
+    unk4: u32,
+    unk5: u32,
+    unk6: u32,
+    unk7: u32,
+    unk8: u32,
+    game_id_2_index: usize, // Some kind of game id, identical to game_id_1
+    unk9: u32,
+    unk10: u32,
+    unk11: u32,
+    unk12: u32,
+    window_width: u32,
+    window_height: u32,
+    unk13: u32,
+    unk14: u32,
+    unk15: u32,
+    unk16: u32,
+    unk17: u32,
+    unk18: u32,
+    unk19: u32,
+    unk20: u32,
+    window_title_index: usize,
+    unknown: Vec<u32>,
 }
 
 /// Purpose unknown.
