@@ -555,6 +555,7 @@ fn read_chunk_header<R: Read>(reader: &mut R) -> Result<ChunkHeader, ReadError> 
     let mut type_id = [0u8; TYPE_ID_LEN];
     try!(reader.read_exact(&mut type_id));
     let size = try!(reader.read_i32::<LittleEndian>());
+    info!("Chunk {} with size {}", String::from_utf8_lossy(&type_id), size);
     Ok(ChunkHeader {
         type_id: type_id,
         size: size as usize,

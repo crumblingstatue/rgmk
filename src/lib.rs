@@ -3,6 +3,8 @@
 #[macro_use]
 extern crate quick_error;
 extern crate byteorder;
+#[macro_use]
+extern crate log;
 
 mod gamedata_io;
 

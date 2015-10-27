@@ -1,11 +1,13 @@
 extern crate rgmk;
 extern crate byteorder;
+extern crate env_logger;
 
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufReader, BufWriter};
 
 fn main() {
+    env_logger::init().unwrap();
     let original = {
         let mut args = std::env::args().skip(1);
         let path = args.next().expect("Expected path as argument");
