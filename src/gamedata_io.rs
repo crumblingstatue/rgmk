@@ -135,12 +135,10 @@ fn form_content_len(data: &GameData) -> i32 {
 }
 
 pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error> {
-    let mut offset = 0;
     try!(writer.write_all(b"FORM"));
     let len = form_content_len(data);
     try!(writer.write_i32::<LittleEndian>(len));
-    offset += CHUNK_HEADER_LEN;
-    let stringtable_offset = offset + data.metadata.len() + data.optn.len() + data.extn.len() +
+    let stringtable_offset = data.metadata.len() + data.optn.len() + data.extn.len() +
                              data.audio_groups.as_ref().unwrap().len() +
                              data.sounds.len() + data.sprites.len() +
                              data.backgrounds.len() +
@@ -152,7 +150,7 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error>
                              data.tpag.len() + data.code.len() +
                              data.variables.len() +
                              data.functions.len() +
-                             (CHUNK_HEADER_LEN * 19);
+                             (CHUNK_HEADER_LEN * 20);
     try!(data.metadata.write(writer, string_offsets(&data.strings, stringtable_offset)));
     try!(data.optn.write(writer, ()));
     try!(data.extn.write(writer, ()));
