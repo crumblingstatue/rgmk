@@ -374,6 +374,7 @@ impl<'a> Chunk<'a> for Variables {
             let offset = try!(reader.read_u32::<LittleEndian>());
             let unk1 = try!(reader.read_u32::<LittleEndian>());
             let unk2 = try!(reader.read_u32::<LittleEndian>());
+            trace!("unk1 {} unk2 {}", unk1, unk2);
             vars.push(Variable {
                 name_index: 0,
                 unknown1: unk1,
