@@ -120,15 +120,14 @@ pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
 fn form_content_len(data: &GameData) -> i32 {
     data.metadata.len() + CHUNK_HEADER_LEN + data.optn.len() + CHUNK_HEADER_LEN +
     data.extn.len() + CHUNK_HEADER_LEN + data.sounds.len() + CHUNK_HEADER_LEN +
-    data.audio_groups.as_ref().map_or(0, |a| a.len()) + CHUNK_HEADER_LEN +
-    data.sprites.len() + CHUNK_HEADER_LEN + data.backgrounds.len() +
-    CHUNK_HEADER_LEN +
+    data.audio_groups.as_ref().map_or(0, |a| a.len() + CHUNK_HEADER_LEN) +
+    data.sprites.len() + CHUNK_HEADER_LEN + data.backgrounds.len() + CHUNK_HEADER_LEN +
     data.paths.len() + CHUNK_HEADER_LEN + data.scripts.len() +
-    CHUNK_HEADER_LEN + data.shaders.len() +
-    CHUNK_HEADER_LEN + data.fonts.len() + CHUNK_HEADER_LEN +
-    data.timelines.len() + CHUNK_HEADER_LEN + data.objects.len() + CHUNK_HEADER_LEN +
-    data.rooms.len() + CHUNK_HEADER_LEN + data.dafl.len() +
-    CHUNK_HEADER_LEN + data.tpag.len() + CHUNK_HEADER_LEN + data.code.len() + CHUNK_HEADER_LEN +
+    CHUNK_HEADER_LEN + data.shaders.len() + CHUNK_HEADER_LEN + data.fonts.len() +
+    CHUNK_HEADER_LEN + data.timelines.len() +
+    CHUNK_HEADER_LEN + data.objects.len() + CHUNK_HEADER_LEN + data.rooms.len() +
+    CHUNK_HEADER_LEN + data.dafl.len() + CHUNK_HEADER_LEN + data.tpag.len() +
+    CHUNK_HEADER_LEN + data.code.len() + CHUNK_HEADER_LEN +
     data.variables.len() + CHUNK_HEADER_LEN + data.functions.len() +
     CHUNK_HEADER_LEN + data.strings.len() + CHUNK_HEADER_LEN + data.textures.len() +
     CHUNK_HEADER_LEN + data.audio.len() + CHUNK_HEADER_LEN
@@ -138,7 +137,7 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> io::Result<()> {
     try!(writer.write_all(b"FORM"));
     try!(writer.write_i32::<LittleEndian>(form_content_len(data)));
     let stringtable_offset = data.metadata.len() + data.optn.len() + data.extn.len() +
-                             data.audio_groups.as_ref().unwrap().len() +
+                             data.audio_groups.as_ref().map_or(0, |a| a.len() + CHUNK_HEADER_LEN) +
                              data.sounds.len() + data.sprites.len() +
                              data.backgrounds.len() +
                              data.paths.len() + data.scripts.len() +
@@ -149,7 +148,7 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> io::Result<()> {
                              data.tpag.len() + data.code.len() +
                              data.variables.len() +
                              data.functions.len() +
-                             (CHUNK_HEADER_LEN * 20);
+                             (CHUNK_HEADER_LEN * 19);
     let string_offsets = string_offsets(&data.strings, stringtable_offset);
     try!(data.metadata.write(writer, &string_offsets));
     try!(data.optn.write(writer, ()));
