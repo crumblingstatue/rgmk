@@ -51,10 +51,10 @@ impl GameData {
         let file = try!(File::open(path));
         GameData::from_reader(&mut BufReader::new(file))
     }
-    pub fn write_to_writer<W: Write>(&self, writer: &mut W) -> Result<(), io::Error> {
+    pub fn write_to_writer<W: Write>(&self, writer: &mut W) -> io::Result<()> {
         gamedata_io::write(self, writer)
     }
-    pub fn save_to_file<P: AsRef<path::Path>>(&self, path: &P) -> Result<(), io::Error> {
+    pub fn save_to_file<P: AsRef<path::Path>>(&self, path: &P) -> io::Result<()> {
         use std::fs::File;
         use std::io::BufWriter;
         let file = try!(File::create(path));
