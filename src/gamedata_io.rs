@@ -47,7 +47,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     let sprites = try!(Sprites::read(reader));
     let backgrounds = try!(Backgrounds::read(reader));
     let paths = try!(Paths::read(reader));
-    let scripts = try!(Scripts::read(reader));
+    let (mut scripts, script_name_offsets) = try!(Scripts::read(reader));
     let shaders = try!(Shaders::read(reader));
     let fonts = try!(Fonts::read(reader));
     let timelines = try!(Timelines::read(reader));
@@ -71,6 +71,14 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
         }
         if meta_string_offsets.window_title - 4 == soff {
             meta.window_title_index = i;
+        }
+    }
+    for (i, off) in script_name_offsets.into_iter().enumerate() {
+        for (j, &soff) in offsets.iter().enumerate() {
+            if off - 4 == soff {
+                scripts.scripts[i].name_index = j;
+                break;
+            }
         }
     }
     for (i, off) in var_name_offsets.into_iter().enumerate() {
@@ -160,7 +168,7 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     try!(data.sprites.write(writer, ()));
     try!(data.backgrounds.write(writer, ()));
     try!(data.paths.write(writer, ()));
-    try!(data.scripts.write(writer, ()));
+    try!(data.scripts.write(writer, &string_offsets));
     try!(data.shaders.write(writer, ()));
     try!(data.fonts.write(writer, ()));
     try!(data.timelines.write(writer, ()));
@@ -349,7 +357,6 @@ unk_chunk!(AudioGroups, b"AGRP");
 unk_chunk!(Sprites, b"SPRT");
 unk_chunk!(Backgrounds, b"BGND");
 unk_chunk!(Paths, b"PATH");
-unk_chunk!(Scripts, b"SCPT");
 unk_chunk!(Shaders, b"SHDR");
 unk_chunk!(Fonts, b"FONT");
 unk_chunk!(Timelines, b"TMLN");
@@ -360,6 +367,52 @@ unk_chunk!(Tpag, b"TPAG");
 unk_chunk!(Code, b"CODE");
 unk_chunk!(Textures, b"TXTR");
 unk_chunk!(Audio, b"AUDO");
+
+impl<'a> Chunk<'a> for Scripts {
+    const TYPE_ID: &'static [u8; 4] = b"SCPT";
+    type ReadOutput = (Self, Vec<u32>);
+    type WriteInput = &'a Vec<i32>;
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+        try!(get_chunk_header(reader, Self::TYPE_ID));
+        let num_scripts = try!(reader.read_u32::<LittleEndian>());
+        trace!("{} scripts", num_scripts);
+        // Read script entry offsets
+        for _ in 0..num_scripts {
+            // For now just discard them
+            try!(reader.read_u32::<LittleEndian>());
+        }
+        let mut name_offsets = Vec::new();
+        let mut scripts = Vec::new();
+        for _ in 0..num_scripts {
+            name_offsets.push(try!(reader.read_u32::<LittleEndian>()));
+            scripts.push(Script {
+                name_index: 0,
+                unknown: try!(reader.read_u32::<LittleEndian>()),
+            });
+        }
+        Ok((Scripts { scripts: scripts }, name_offsets))
+    }
+    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
+        try!(writer.write_all(Self::TYPE_ID));
+        try!(writer.write_i32::<LittleEndian>(self.len()));
+        try!(writer.write_u32::<LittleEndian>(self.scripts.len() as u32));
+        let writer_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32;
+        let first_script_offset = writer_offset + (self.scripts.len() as u32 * 4);
+        // Write offset data
+        for i in 0..self.scripts.len() as u32 {
+            try!(writer.write_u32::<LittleEndian>(first_script_offset + (i * 8)));
+        }
+        // Write script data
+        for s in &self.scripts {
+            try!(writer.write_u32::<LittleEndian>(input[s.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(s.unknown));
+        }
+        Ok(())
+    }
+    fn len(&self) -> i32 {
+        4 + (self.scripts.len() as i32 * (4 + (2 * 4)))
+    }
+}
 
 impl<'a> Chunk<'a> for Variables {
     const TYPE_ID: &'static [u8; 4] = b"VARI";

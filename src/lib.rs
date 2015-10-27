@@ -155,9 +155,16 @@ pub struct Paths {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
+/// A game maker script.
+pub struct Script {
+    /// Index of the name of the script in the string table
+    pub name_index: usize,
+    unknown: u32, // Unknown
+}
+
 /// A collection of scripts.
 pub struct Scripts {
-    raw: Vec<u8>, // Data not analyzed yet
+    pub scripts: Vec<Script>,
 }
 
 /// A collection of shaders.
