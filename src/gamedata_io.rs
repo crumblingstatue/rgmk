@@ -411,12 +411,13 @@ impl<'a> Chunk<'a> for Functions {
         let mut remaining = header.size;
         while remaining > 0 {
             let offset = try!(reader.read_u32::<LittleEndian>());
-            let unk1 = try!(reader.read_u32::<LittleEndian>());
-            let unk2 = try!(reader.read_u32::<LittleEndian>());
+            let unk = try!(reader.read_u32::<LittleEndian>());
+            let code_offset = try!(reader.read_u32::<LittleEndian>());
+            trace!("unk {}, code offset {}", unk, code_offset);
             funs.push(Function {
                 name_index: 0,
-                unknown1: unk1,
-                unknown2: unk2,
+                unknown: unk,
+                code_offset: code_offset,
             });
             offsets.push(offset);
             remaining -= 3 * 4;
@@ -429,8 +430,8 @@ impl<'a> Chunk<'a> for Functions {
         try!(writer.write_i32::<LittleEndian>(len));
         for fun in &self.functions {
             try!(writer.write_u32::<LittleEndian>(input[fun.name_index] as u32));
-            try!(writer.write_u32::<LittleEndian>(fun.unknown1));
-            try!(writer.write_u32::<LittleEndian>(fun.unknown2));
+            try!(writer.write_u32::<LittleEndian>(fun.unknown));
+            try!(writer.write_u32::<LittleEndian>(fun.code_offset));
         }
         Ok(())
     }
