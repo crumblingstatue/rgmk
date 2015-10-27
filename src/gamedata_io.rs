@@ -136,8 +136,7 @@ fn form_content_len(data: &GameData) -> i32 {
 
 pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error> {
     try!(writer.write_all(b"FORM"));
-    let len = form_content_len(data);
-    try!(writer.write_i32::<LittleEndian>(len));
+    try!(writer.write_i32::<LittleEndian>(form_content_len(data)));
     let stringtable_offset = data.metadata.len() + data.optn.len() + data.extn.len() +
                              data.audio_groups.as_ref().unwrap().len() +
                              data.sounds.len() + data.sprites.len() +
