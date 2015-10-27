@@ -240,9 +240,15 @@ pub struct Strings {
     pub strings: Vec<String>,
 }
 
+pub struct Texture {
+    unknown: u32, // Purpose unknown. Always seems to be 1.
+    offset: u32, // Offset of data in the texture data
+}
+
 /// A collection of textures.
 pub struct Textures {
-    raw: Vec<u8>, // Data not analyzed yet
+    pub textures: Vec<Texture>,
+    texture_data: Vec<u8>,
 }
 
 /// A collection of audio data.
