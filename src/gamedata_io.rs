@@ -134,7 +134,7 @@ fn form_content_len(data: &GameData) -> i32 {
     CHUNK_HEADER_LEN + data.audio.len() + CHUNK_HEADER_LEN
 }
 
-pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error> {
+pub fn write<W: Write>(data: &GameData, writer: &mut W) -> io::Result<()> {
     try!(writer.write_all(b"FORM"));
     try!(writer.write_i32::<LittleEndian>(form_content_len(data)));
     let stringtable_offset = data.metadata.len() + data.optn.len() + data.extn.len() +
@@ -194,7 +194,7 @@ trait Chunk {
     /// Additional inormation needed in order to be able to write correct output.
     type WriteInput = ();
     fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> Result<(), io::Error>;
+    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()>;
     fn len(&self) -> i32;
 }
 
@@ -208,7 +208,7 @@ macro_rules! unk_chunk {
                     raw: try!(read_into_byte_vec(reader, chunk_header.size))
                 })
             }
-            fn write<W: Write>(&self, writer: &mut W, _input: ()) -> Result<(), io::Error> {
+            fn write<W: Write>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
                 try!(writer.write_all(Self::TYPE_ID));
                 try!(writer.write_i32::<LittleEndian>(self.len()));
                 try!(writer.write_all(&self.raw));
@@ -304,7 +304,7 @@ impl Chunk for MetaData {
             window_title: window_title_offset,
         }))
     }
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> Result<(), io::Error> {
+    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         try!(writer.write_i32::<LittleEndian>(self.len()));
         try!(writer.write_u32::<LittleEndian>(self.unk1));
@@ -384,7 +384,7 @@ impl Chunk for Variables {
         }
         Ok((Variables { variables: vars }, offsets))
     }
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> Result<(), io::Error> {
+    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         let len = self.len();
         try!(writer.write_i32::<LittleEndian>(len));
@@ -423,7 +423,7 @@ impl Chunk for Functions {
         }
         Ok((Functions { functions: funs }, offsets))
     }
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> Result<(), io::Error> {
+    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         let len = self.len();
         try!(writer.write_i32::<LittleEndian>(len));
@@ -462,7 +462,7 @@ impl Chunk for Strings {
         try!(reader.read_exact(&mut buf));
         Ok((Strings { strings: strings }, offsets))
     }
-    fn write<W: Write>(&self, writer: &mut W, offset: i32) -> Result<(), io::Error> {
+    fn write<W: Write>(&self, writer: &mut W, offset: i32) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         try!(writer.write_i32::<LittleEndian>(self.len()));
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
