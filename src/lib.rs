@@ -41,8 +41,13 @@ pub struct GameData {
     audio: Audio,
 }
 
+pub trait GameDataRead: Read + io::Seek {}
+impl<T: Read + io::Seek> GameDataRead for T {}
+pub trait GameDataWrite: Write + io::Seek {}
+impl<T: Write + io::Seek> GameDataWrite for T {}
+
 impl GameData {
-    pub fn from_reader<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
+    pub fn from_reader<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
         gamedata_io::read(reader)
     }
     pub fn from_file<P: AsRef<path::Path>>(path: &P) -> Result<GameData, ReadError> {
@@ -51,7 +56,7 @@ impl GameData {
         let file = try!(File::open(path));
         GameData::from_reader(&mut BufReader::new(file))
     }
-    pub fn write_to_writer<W: Write>(&self, writer: &mut W) -> io::Result<()> {
+    pub fn write_to_writer<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         gamedata_io::write(self, writer)
     }
     pub fn save_to_file<P: AsRef<path::Path>>(&self, path: &P) -> io::Result<()> {

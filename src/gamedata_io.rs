@@ -37,7 +37,7 @@ quick_error! {
 const TYPE_ID_LEN: usize = 4;
 const CHUNK_HEADER_LEN: i32 = TYPE_ID_LEN as i32 + 4;
 
-pub fn read<R: Read>(reader: &mut R) -> Result<GameData, ReadError> {
+pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     try!(get_chunk_header(reader, b"FORM"));
     let (mut meta, meta_string_offsets) = try!(MetaData::read(reader));
     let optn = try!(Optn::read(reader));
@@ -133,7 +133,7 @@ fn form_content_len(data: &GameData) -> i32 {
     CHUNK_HEADER_LEN + data.audio.len() + CHUNK_HEADER_LEN
 }
 
-pub fn write<W: Write>(data: &GameData, writer: &mut W) -> io::Result<()> {
+pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()> {
     try!(writer.write_all(b"FORM"));
     try!(writer.write_i32::<LittleEndian>(form_content_len(data)));
     let stringtable_offset = data.metadata.len() + data.optn.len() + data.extn.len() +
@@ -193,8 +193,8 @@ trait Chunk<'a> {
     type ReadOutput = Self;
     /// Additional inormation needed in order to be able to write correct output.
     type WriteInput = ();
-    fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()>;
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
+    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()>;
     fn len(&self) -> i32;
 }
 
@@ -202,13 +202,13 @@ macro_rules! unk_chunk {
     ($name:ident, $typeid:expr) => {
         impl<'a> Chunk<'a> for $name {
             const TYPE_ID: &'static [u8; 4] = $typeid;
-            fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+            fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
                 let chunk_header = try!(get_chunk_header(reader, Self::TYPE_ID));
                 Ok($name {
                     raw: try!(read_into_byte_vec(reader, chunk_header.size))
                 })
             }
-            fn write<W: Write>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
+            fn write<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
                 try!(writer.write_all(Self::TYPE_ID));
                 try!(writer.write_i32::<LittleEndian>(self.len()));
                 try!(writer.write_all(&self.raw));
@@ -233,7 +233,7 @@ impl<'a> Chunk<'a> for MetaData {
     const TYPE_ID: &'static [u8; 4] = b"GEN8";
     type ReadOutput = (Self, MetaDataOffsets);
     type WriteInput = &'a Vec<i32>;
-    fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
         let game_id_1_offset = try!(reader.read_u32::<LittleEndian>());
@@ -304,7 +304,7 @@ impl<'a> Chunk<'a> for MetaData {
             window_title: window_title_offset,
         }))
     }
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
+    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         try!(writer.write_i32::<LittleEndian>(self.len()));
         try!(writer.write_u32::<LittleEndian>(self.unk1));
@@ -365,7 +365,7 @@ impl<'a> Chunk<'a> for Variables {
     const TYPE_ID: &'static [u8; 4] = b"VARI";
     type ReadOutput = (Self, Vec<u32>);
     type WriteInput = &'a Vec<i32>;
-    fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
         let mut vars = Vec::new();
@@ -384,7 +384,7 @@ impl<'a> Chunk<'a> for Variables {
         }
         Ok((Variables { variables: vars }, offsets))
     }
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
+    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         let len = self.len();
         try!(writer.write_i32::<LittleEndian>(len));
@@ -404,7 +404,7 @@ impl<'a> Chunk<'a> for Functions {
     const TYPE_ID: &'static [u8; 4] = b"FUNC";
     type ReadOutput = (Self, Vec<u32>);
     type WriteInput = &'a Vec<i32>;
-    fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
         let mut funs = Vec::new();
@@ -423,7 +423,7 @@ impl<'a> Chunk<'a> for Functions {
         }
         Ok((Functions { functions: funs }, offsets))
     }
-    fn write<W: Write>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
+    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         let len = self.len();
         try!(writer.write_i32::<LittleEndian>(len));
@@ -443,7 +443,7 @@ impl<'a> Chunk<'a> for Strings {
     const TYPE_ID: &'static [u8; 4] = b"STRG";
     type ReadOutput = (Self, Vec<u32>);
     type WriteInput = i32;
-    fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let count = try!(reader.read_u32::<LittleEndian>());
         let mut offsets = Vec::with_capacity(count as usize);
@@ -462,7 +462,7 @@ impl<'a> Chunk<'a> for Strings {
         try!(reader.read_exact(&mut buf));
         Ok((Strings { strings: strings }, offsets))
     }
-    fn write<W: Write>(&self, writer: &mut W, offset: i32) -> io::Result<()> {
+    fn write<W: GameDataWrite>(&self, writer: &mut W, offset: i32) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         try!(writer.write_i32::<LittleEndian>(self.len()));
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
@@ -493,7 +493,7 @@ impl<'a> Chunk<'a> for Strings {
     }
 }
 
-fn read_string<R: Read>(reader: &mut R) -> Result<String, StringReadError> {
+fn read_string<R: GameDataRead>(reader: &mut R) -> Result<String, StringReadError> {
     let len = try!(reader.read_u32::<LittleEndian>());
     let mut buf = Vec::with_capacity(len as usize);
     unsafe {
@@ -514,20 +514,24 @@ struct ChunkHeader {
     size: usize,
 }
 
-fn read_chunk_header<R: Read>(reader: &mut R) -> Result<ChunkHeader, ReadError> {
+fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, ReadError> {
+    let offset = try!(reader.seek(io::SeekFrom::Current(0)));
     let mut type_id = [0u8; TYPE_ID_LEN];
     try!(reader.read_exact(&mut type_id));
     let size = try!(reader.read_i32::<LittleEndian>());
-    info!("Chunk {} with size {}",
+    info!("Read chunk {} with size {:>9} @ {:>9}",
           String::from_utf8_lossy(&type_id),
-          size);
+          size,
+          offset);
     Ok(ChunkHeader {
         type_id: type_id,
         size: size as usize,
     })
 }
 
-fn get_chunk_header<R: Read>(reader: &mut R, should_be: &[u8]) -> Result<ChunkHeader, ReadError> {
+fn get_chunk_header<R: GameDataRead>(reader: &mut R,
+                                     should_be: &[u8])
+                                     -> Result<ChunkHeader, ReadError> {
     let header = try!(read_chunk_header(reader));
     if &header.type_id == should_be {
         Ok(header)
@@ -536,7 +540,7 @@ fn get_chunk_header<R: Read>(reader: &mut R, should_be: &[u8]) -> Result<ChunkHe
     }
 }
 
-fn read_into_byte_vec<R: Read>(reader: &mut R, len: usize) -> Result<Vec<u8>, io::Error> {
+fn read_into_byte_vec<R: GameDataRead>(reader: &mut R, len: usize) -> Result<Vec<u8>, io::Error> {
     let mut vec = Vec::with_capacity(len);
     unsafe {
         vec.set_len(len);
