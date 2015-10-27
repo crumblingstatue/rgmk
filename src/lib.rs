@@ -204,8 +204,8 @@ pub struct Code {
 pub struct Variable {
     /// Index of the name of the variable in the strings section.
     pub name_index: usize,
-    unknown1: u32, // Purpose unknown
-    unknown2: u32, // Purpose unknown
+    unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
+    code_offset: u32, // Points into the code section
 }
 
 /// A collection of variables.

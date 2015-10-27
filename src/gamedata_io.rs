@@ -372,13 +372,13 @@ impl<'a> Chunk<'a> for Variables {
         let mut remaining = header.size;
         while remaining > 0 {
             let offset = try!(reader.read_u32::<LittleEndian>());
-            let unk1 = try!(reader.read_u32::<LittleEndian>());
-            let unk2 = try!(reader.read_u32::<LittleEndian>());
-            trace!("unk1 {} unk2 {}", unk1, unk2);
+            let unk = try!(reader.read_u32::<LittleEndian>());
+            let code_offset = try!(reader.read_u32::<LittleEndian>());
+            trace!("unk {} code_offset {}", unk, code_offset);
             vars.push(Variable {
                 name_index: 0,
-                unknown1: unk1,
-                unknown2: unk2,
+                unknown: unk,
+                code_offset: code_offset,
             });
             offsets.push(offset);
             remaining -= 3 * 4;
@@ -391,8 +391,8 @@ impl<'a> Chunk<'a> for Variables {
         try!(writer.write_i32::<LittleEndian>(len));
         for var in &self.variables {
             try!(writer.write_u32::<LittleEndian>(input[var.name_index] as u32));
-            try!(writer.write_u32::<LittleEndian>(var.unknown1));
-            try!(writer.write_u32::<LittleEndian>(var.unknown2));
+            try!(writer.write_u32::<LittleEndian>(var.unknown));
+            try!(writer.write_u32::<LittleEndian>(var.code_offset));
         }
         Ok(())
     }
