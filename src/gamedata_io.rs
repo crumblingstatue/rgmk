@@ -150,7 +150,8 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> io::Result<()> {
                              data.variables.len() +
                              data.functions.len() +
                              (CHUNK_HEADER_LEN * 20);
-    try!(data.metadata.write(writer, string_offsets(&data.strings, stringtable_offset)));
+    let string_offsets = string_offsets(&data.strings, stringtable_offset);
+    try!(data.metadata.write(writer, &string_offsets));
     try!(data.optn.write(writer, ()));
     try!(data.extn.write(writer, ()));
     try!(data.sounds.write(writer, ()));
@@ -169,8 +170,8 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> io::Result<()> {
     try!(data.dafl.write(writer, ()));
     try!(data.tpag.write(writer, ()));
     try!(data.code.write(writer, ()));
-    try!(data.variables.write(writer, string_offsets(&data.strings, stringtable_offset)));
-    try!(data.functions.write(writer, string_offsets(&data.strings, stringtable_offset)));
+    try!(data.variables.write(writer, &string_offsets));
+    try!(data.functions.write(writer, &string_offsets));
     try!(data.strings.write(writer, stringtable_offset));
     try!(data.textures.write(writer, ()));
     try!(data.audio.write(writer, ()));
@@ -188,7 +189,7 @@ fn string_offsets(strings: &Strings, base_offset: i32) -> Vec<i32> {
     offsets
 }
 
-trait Chunk {
+trait Chunk<'a> {
     const TYPE_ID: &'static [u8; 4];
     type ReadOutput = Self;
     /// Additional inormation needed in order to be able to write correct output.
@@ -200,7 +201,7 @@ trait Chunk {
 
 macro_rules! unk_chunk {
     ($name:ident, $typeid:expr) => {
-        impl Chunk for $name {
+        impl<'a> Chunk<'a> for $name {
             const TYPE_ID: &'static [u8; 4] = $typeid;
             fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
                 let chunk_header = try!(get_chunk_header(reader, Self::TYPE_ID));
@@ -229,10 +230,10 @@ struct MetaDataOffsets {
     window_title: u32,
 }
 
-impl Chunk for MetaData {
+impl<'a> Chunk<'a> for MetaData {
     const TYPE_ID: &'static [u8; 4] = b"GEN8";
     type ReadOutput = (Self, MetaDataOffsets);
-    type WriteInput = Vec<i32>;
+    type WriteInput = &'a Vec<i32>;
     fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
@@ -361,10 +362,10 @@ unk_chunk!(Code, b"CODE");
 unk_chunk!(Textures, b"TXTR");
 unk_chunk!(Audio, b"AUDO");
 
-impl Chunk for Variables {
+impl<'a> Chunk<'a> for Variables {
     const TYPE_ID: &'static [u8; 4] = b"VARI";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = Vec<i32>;
+    type WriteInput = &'a Vec<i32>;
     fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
@@ -400,10 +401,10 @@ impl Chunk for Variables {
     }
 }
 
-impl Chunk for Functions {
+impl<'a> Chunk<'a> for Functions {
     const TYPE_ID: &'static [u8; 4] = b"FUNC";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = Vec<i32>;
+    type WriteInput = &'a Vec<i32>;
     fn read<R: Read>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
@@ -439,7 +440,7 @@ impl Chunk for Functions {
     }
 }
 
-impl Chunk for Strings {
+impl<'a> Chunk<'a> for Strings {
     const TYPE_ID: &'static [u8; 4] = b"STRG";
     type ReadOutput = (Self, Vec<u32>);
     type WriteInput = i32;
