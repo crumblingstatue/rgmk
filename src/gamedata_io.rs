@@ -140,76 +140,42 @@ pub fn write<W: Write>(data: &GameData, writer: &mut W) -> Result<(), io::Error>
     let len = form_content_len(data);
     try!(writer.write_i32::<LittleEndian>(len));
     offset += CHUNK_HEADER_LEN;
-    try!(data.metadata.write(writer,
-                             string_offsets(&data.strings,
-                                            offset + data.metadata.len() + data.optn.len() +
-                                            data.extn.len() +
-                                            data.audio_groups.as_ref().unwrap().len() +
-                                            data.sounds.len() +
-                                            data.sprites.len() +
-                                            data.backgrounds.len() +
-                                            data.paths.len() +
-                                            data.scripts.len() +
-                                            data.shaders.len() +
-                                            data.fonts.len() +
-                                            data.timelines.len() +
-                                            data.objects.len() +
-                                            data.rooms.len() +
-                                            data.dafl.len() +
-                                            data.tpag.len() +
-                                            data.code.len() +
-                                            data.variables.len() +
-                                            data.functions.len() +
-                                            (CHUNK_HEADER_LEN * 19))));
-    offset += data.metadata.len() + CHUNK_HEADER_LEN;
+    let stringtable_offset = offset + data.metadata.len() + data.optn.len() + data.extn.len() +
+                             data.audio_groups.as_ref().unwrap().len() +
+                             data.sounds.len() + data.sprites.len() +
+                             data.backgrounds.len() +
+                             data.paths.len() + data.scripts.len() +
+                             data.shaders.len() + data.fonts.len() +
+                             data.timelines.len() +
+                             data.objects.len() + data.rooms.len() +
+                             data.dafl.len() +
+                             data.tpag.len() + data.code.len() +
+                             data.variables.len() +
+                             data.functions.len() +
+                             (CHUNK_HEADER_LEN * 19);
+    try!(data.metadata.write(writer, string_offsets(&data.strings, stringtable_offset)));
     try!(data.optn.write(writer, ()));
-    offset += data.optn.len() + CHUNK_HEADER_LEN;
     try!(data.extn.write(writer, ()));
-    offset += data.extn.len() + CHUNK_HEADER_LEN;
     try!(data.sounds.write(writer, ()));
-    offset += data.sounds.len() + CHUNK_HEADER_LEN;
     if let Some(ref agrp) = data.audio_groups {
         try!(agrp.write(writer, ()));
-        offset += agrp.len() + CHUNK_HEADER_LEN;
     }
     try!(data.sprites.write(writer, ()));
-    offset += data.sprites.len() + CHUNK_HEADER_LEN;
     try!(data.backgrounds.write(writer, ()));
-    offset += data.backgrounds.len() + CHUNK_HEADER_LEN;
     try!(data.paths.write(writer, ()));
-    offset += data.paths.len() + CHUNK_HEADER_LEN;
     try!(data.scripts.write(writer, ()));
-    offset += data.scripts.len() + CHUNK_HEADER_LEN;
     try!(data.shaders.write(writer, ()));
-    offset += data.shaders.len() + CHUNK_HEADER_LEN;
     try!(data.fonts.write(writer, ()));
-    offset += data.fonts.len() + CHUNK_HEADER_LEN;
     try!(data.timelines.write(writer, ()));
-    offset += data.timelines.len() + CHUNK_HEADER_LEN;
     try!(data.objects.write(writer, ()));
-    offset += data.objects.len() + CHUNK_HEADER_LEN;
     try!(data.rooms.write(writer, ()));
-    offset += data.rooms.len() + CHUNK_HEADER_LEN;
     try!(data.dafl.write(writer, ()));
-    offset += data.dafl.len() + CHUNK_HEADER_LEN;
     try!(data.tpag.write(writer, ()));
-    offset += data.tpag.len() + CHUNK_HEADER_LEN;
     try!(data.code.write(writer, ()));
-    offset += data.code.len() + CHUNK_HEADER_LEN;
-    try!(data.variables.write(writer,
-                              string_offsets(&data.strings,
-                                             offset + data.variables.len() + CHUNK_HEADER_LEN +
-                                             data.functions.len() +
-                                             CHUNK_HEADER_LEN)));
-    offset += data.variables.len() + CHUNK_HEADER_LEN;
-    try!(data.functions.write(writer,
-                              string_offsets(&data.strings,
-                                             offset + data.functions.len() + CHUNK_HEADER_LEN)));
-    offset += data.functions.len() + CHUNK_HEADER_LEN;
-    try!(data.strings.write(writer, offset));
-    // offset += data.strings.len() + CHUNK_HEADER_LEN;
+    try!(data.variables.write(writer, string_offsets(&data.strings, stringtable_offset)));
+    try!(data.functions.write(writer, string_offsets(&data.strings, stringtable_offset)));
+    try!(data.strings.write(writer, stringtable_offset));
     try!(data.textures.write(writer, ()));
-    // offset += data.textures.len() + CHUNK_HEADER_LEN;
     try!(data.audio.write(writer, ()));
     Ok(())
 }
@@ -555,7 +521,9 @@ fn read_chunk_header<R: Read>(reader: &mut R) -> Result<ChunkHeader, ReadError> 
     let mut type_id = [0u8; TYPE_ID_LEN];
     try!(reader.read_exact(&mut type_id));
     let size = try!(reader.read_i32::<LittleEndian>());
-    info!("Chunk {} with size {}", String::from_utf8_lossy(&type_id), size);
+    info!("Chunk {} with size {}",
+          String::from_utf8_lossy(&type_id),
+          size);
     Ok(ChunkHeader {
         type_id: type_id,
         size: size as usize,
