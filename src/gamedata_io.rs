@@ -305,7 +305,7 @@ struct MetaDataOffsets {
 impl<'a> Chunk<'a> for MetaData {
     const TYPE_ID: &'static [u8; 4] = b"GEN8";
     type ReadOutput = (Self, MetaDataOffsets);
-    type WriteInput = &'a Vec<i32>;
+    type WriteInput = &'a [i32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
@@ -438,7 +438,7 @@ struct OptionOffsets {
 impl<'a> Chunk<'a> for Options {
     const TYPE_ID: &'static [u8; 4] = b"OPTN";
     type ReadOutput = (Self, OptionOffsets);
-    type WriteInput = (&'a Vec<i32>, u32);
+    type WriteInput = (&'a [i32], u32);
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
@@ -587,7 +587,7 @@ struct SoundStringOffsets {
 impl<'a> Chunk<'a> for Sounds {
     const TYPE_ID: &'static [u8; 4] = b"SOND";
     type ReadOutput = (Self, Vec<SoundStringOffsets>);
-    type WriteInput = &'a Vec<i32>;
+    type WriteInput = &'a [i32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let num_sounds = try!(reader.read_u32::<LittleEndian>());
@@ -664,7 +664,7 @@ impl<'a> Chunk<'a> for Sounds {
 impl<'a> Chunk<'a> for Scripts {
     const TYPE_ID: &'static [u8; 4] = b"SCPT";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a Vec<i32>;
+    type WriteInput = &'a [i32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let num_scripts = try!(reader.read_u32::<LittleEndian>());
@@ -710,7 +710,7 @@ impl<'a> Chunk<'a> for Scripts {
 impl<'a> Chunk<'a> for Variables {
     const TYPE_ID: &'static [u8; 4] = b"VARI";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a Vec<i32>;
+    type WriteInput = &'a [i32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
@@ -750,7 +750,7 @@ impl<'a> Chunk<'a> for Variables {
 impl<'a> Chunk<'a> for Functions {
     const TYPE_ID: &'static [u8; 4] = b"FUNC";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a Vec<i32>;
+    type WriteInput = &'a [i32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
