@@ -280,7 +280,13 @@ pub struct Textures {
     texture_data: Vec<u8>,
 }
 
+pub struct AudioData {
+    data: Vec<u8>,
+}
+
 /// A collection of audio data.
 pub struct Audio {
-    raw: Vec<u8>, // Data not analyzed yet
+    audio: Vec<AudioData>,
+    offsets: Vec<u32>, // Audio data is not contiguous, so we need to store relative offsets
+    size: u32, // Fuck it
 }
