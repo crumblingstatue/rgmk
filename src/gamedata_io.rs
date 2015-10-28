@@ -40,7 +40,7 @@ const CHUNK_HEADER_LEN: i32 = TYPE_ID_LEN as i32 + 4;
 pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     try!(get_chunk_header(reader, b"FORM"));
     let (mut meta, meta_string_offsets) = try!(MetaData::read(reader));
-    let optn = try!(Optn::read(reader));
+    let (mut opts, opt_offsets) = try!(Options::read(reader));
     let extn = try!(Extn::read(reader));
     let sounds = try!(Sounds::read(reader));
     let audio_groups = try!(AudioGroups::read(reader));
@@ -73,6 +73,50 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
             meta.window_title_index = i;
         }
     }
+    for (i, &soff) in offsets.iter().enumerate() {
+        if opt_offsets.const1_offset - 4 == soff {
+            opts.constant1_name_index = i;
+        }
+        if opt_offsets.const2_offset - 4 == soff {
+            opts.constant2_name_index = i;
+        }
+        if opt_offsets.const3_offset - 4 == soff {
+            opts.constant3_name_index = i;
+        }
+        if opt_offsets.const4_offset - 4 == soff {
+            opts.constant4_name_index = i;
+        }
+        if opt_offsets.const5_offset - 4 == soff {
+            opts.constant5_name_index = i;
+        }
+        if opt_offsets.const6_offset - 4 == soff {
+            opts.constant6_name_index = i;
+        }
+        if opt_offsets.const7_offset - 4 == soff {
+            opts.constant7_name_index = i;
+        }
+        if opt_offsets.const8_offset - 4 == soff {
+            opts.constant8_name_index = i;
+        }
+        if opt_offsets.const9_offset - 4 == soff {
+            opts.constant9_name_index = i;
+        }
+        if opt_offsets.const10_offset - 4 == soff {
+            opts.constant10_name_index = i;
+        }
+        if opt_offsets.const11_offset - 4 == soff {
+            opts.constant11_name_index = i;
+        }
+        if opt_offsets.const12_offset - 4 == soff {
+            opts.constant12_name_index = i;
+        }
+        if opt_offsets.const13_offset - 4 == soff {
+            opts.constant13_name_index = i;
+        }
+        if opt_offsets.const14_offset - 4 == soff {
+            opts.constant14_name_index = i;
+        }
+    }
     for (i, off) in script_name_offsets.into_iter().enumerate() {
         for (j, &soff) in offsets.iter().enumerate() {
             if off - 4 == soff {
@@ -97,11 +141,14 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
             }
         }
     }
+    let textures_offset = try!(reader.seek(io::SeekFrom::Current(0))) as u32;
     let textures = try!(Textures::read(reader));
+    let texture_data_offset = texture_data_offset(&textures, textures_offset);
+    opts.icon_offset = opt_offsets.icon_offset - texture_data_offset;
     let audio = try!(Audio::read(reader));
     Ok(GameData {
         metadata: meta,
-        optn: optn,
+        options: opts,
         extn: extn,
         sounds: sounds,
         audio_groups: Some(audio_groups),
@@ -126,7 +173,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
 }
 
 fn form_content_len(data: &GameData) -> i32 {
-    data.metadata.len() + CHUNK_HEADER_LEN + data.optn.len() + CHUNK_HEADER_LEN +
+    data.metadata.len() + CHUNK_HEADER_LEN + data.options.len() + CHUNK_HEADER_LEN +
     data.extn.len() + CHUNK_HEADER_LEN + data.sounds.len() + CHUNK_HEADER_LEN +
     data.audio_groups.as_ref().map_or(0, |a| a.len() + CHUNK_HEADER_LEN) +
     data.sprites.len() + CHUNK_HEADER_LEN + data.backgrounds.len() + CHUNK_HEADER_LEN +
@@ -144,7 +191,7 @@ fn form_content_len(data: &GameData) -> i32 {
 pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()> {
     try!(writer.write_all(b"FORM"));
     try!(writer.write_i32::<LittleEndian>(form_content_len(data)));
-    let stringtable_offset = data.metadata.len() + data.optn.len() + data.extn.len() +
+    let stringtable_offset = data.metadata.len() + data.options.len() + data.extn.len() +
                              data.audio_groups.as_ref().map_or(0, |a| a.len() + CHUNK_HEADER_LEN) +
                              data.sounds.len() + data.sprites.len() +
                              data.backgrounds.len() +
@@ -159,7 +206,12 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
                              (CHUNK_HEADER_LEN * 19);
     let string_offsets = string_offsets(&data.strings, stringtable_offset);
     try!(data.metadata.write(writer, &string_offsets));
-    try!(data.optn.write(writer, ()));
+    try!(data.options.write(writer,
+                            (&string_offsets,
+                             texture_data_offset(&data.textures,
+                                                 stringtable_offset as u32 +
+                                                 data.strings.len() as u32 +
+                                                 CHUNK_HEADER_LEN as u32))));
     try!(data.extn.write(writer, ()));
     try!(data.sounds.write(writer, ()));
     if let Some(ref agrp) = data.audio_groups {
@@ -350,7 +402,155 @@ impl<'a> Chunk<'a> for MetaData {
         (self.unknown.len() as i32 * 4) + (26 * 4)
     }
 }
-unk_chunk!(Optn, b"OPTN");
+
+#[derive(Clone, Copy)]
+struct OptionOffsets {
+    icon_offset: u32,
+    const1_offset: u32,
+    const2_offset: u32,
+    const3_offset: u32,
+    const4_offset: u32,
+    const5_offset: u32,
+    const6_offset: u32,
+    const7_offset: u32,
+    const8_offset: u32,
+    const9_offset: u32,
+    const10_offset: u32,
+    const11_offset: u32,
+    const12_offset: u32,
+    const13_offset: u32,
+    const14_offset: u32,
+}
+
+impl<'a> Chunk<'a> for Options {
+    const TYPE_ID: &'static [u8; 4] = b"OPTN";
+    type ReadOutput = (Self, OptionOffsets);
+    type WriteInput = (&'a Vec<i32>, u32);
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+        try!(get_chunk_header(reader, Self::TYPE_ID));
+        let unk1 = try!(reader.read_u32::<LittleEndian>());
+        let unk2 = try!(reader.read_u32::<LittleEndian>());
+        let icon_offset = try!(reader.read_u32::<LittleEndian>());
+        let unk3 = try!(reader.read_u32::<LittleEndian>());
+        let unk4 = try!(reader.read_u32::<LittleEndian>());
+        let unk5 = try!(reader.read_u32::<LittleEndian>());
+        let unk6 = try!(reader.read_u32::<LittleEndian>());
+        let unk7 = try!(reader.read_u32::<LittleEndian>());
+        let unk8 = try!(reader.read_u32::<LittleEndian>());
+        let unk9 = try!(reader.read_u32::<LittleEndian>());
+        let unk10 = try!(reader.read_u32::<LittleEndian>());
+        let unk11 = try!(reader.read_u32::<LittleEndian>());
+        let unk12 = try!(reader.read_u32::<LittleEndian>());
+        let unk13 = try!(reader.read_u32::<LittleEndian>());
+        let unk14 = try!(reader.read_u32::<LittleEndian>());
+        let unk15 = try!(reader.read_u32::<LittleEndian>());
+        let const1_offset = try!(reader.read_u32::<LittleEndian>());
+        let const2_offset = try!(reader.read_u32::<LittleEndian>());
+        let const3_offset = try!(reader.read_u32::<LittleEndian>());
+        let const4_offset = try!(reader.read_u32::<LittleEndian>());
+        let const5_offset = try!(reader.read_u32::<LittleEndian>());
+        let const6_offset = try!(reader.read_u32::<LittleEndian>());
+        let const7_offset = try!(reader.read_u32::<LittleEndian>());
+        let const8_offset = try!(reader.read_u32::<LittleEndian>());
+        let const9_offset = try!(reader.read_u32::<LittleEndian>());
+        let const10_offset = try!(reader.read_u32::<LittleEndian>());
+        let const11_offset = try!(reader.read_u32::<LittleEndian>());
+        let const12_offset = try!(reader.read_u32::<LittleEndian>());
+        let const13_offset = try!(reader.read_u32::<LittleEndian>());
+        let const14_offset = try!(reader.read_u32::<LittleEndian>());
+        Ok((Options {
+            unk1: unk1,
+            unk2: unk2,
+            icon_offset: 0,
+            unk3: unk3,
+            unk4: unk4,
+            unk5: unk5,
+            unk6: unk6,
+            unk7: unk7,
+            unk8: unk8,
+            unk9: unk9,
+            unk10: unk10,
+            unk11: unk11,
+            unk12: unk12,
+            unk13: unk13,
+            unk14: unk14,
+            unk15: unk15,
+            constant1_name_index: 0,
+            constant2_name_index: 0,
+            constant3_name_index: 0,
+            constant4_name_index: 0,
+            constant5_name_index: 0,
+            constant6_name_index: 0,
+            constant7_name_index: 0,
+            constant8_name_index: 0,
+            constant9_name_index: 0,
+            constant10_name_index: 0,
+            constant11_name_index: 0,
+            constant12_name_index: 0,
+            constant13_name_index: 0,
+            constant14_name_index: 0,
+        },
+            OptionOffsets {
+            icon_offset: icon_offset,
+            const1_offset: const1_offset,
+            const2_offset: const2_offset,
+            const3_offset: const3_offset,
+            const4_offset: const4_offset,
+            const5_offset: const5_offset,
+            const6_offset: const6_offset,
+            const7_offset: const7_offset,
+            const8_offset: const8_offset,
+            const9_offset: const9_offset,
+            const10_offset: const10_offset,
+            const11_offset: const11_offset,
+            const12_offset: const12_offset,
+            const13_offset: const13_offset,
+            const14_offset: const14_offset,
+        }))
+    }
+    fn write<W: GameDataWrite>(&self,
+                               writer: &mut W,
+                               (input, texture_data_offset): Self::WriteInput)
+                               -> io::Result<()> {
+        try!(writer.write_all(Self::TYPE_ID));
+        try!(writer.write_i32::<LittleEndian>(self.len()));
+        try!(writer.write_u32::<LittleEndian>(self.unk1));
+        try!(writer.write_u32::<LittleEndian>(self.unk2));
+        try!(writer.write_u32::<LittleEndian>(texture_data_offset + self.icon_offset));
+        try!(writer.write_u32::<LittleEndian>(self.unk3));
+        try!(writer.write_u32::<LittleEndian>(self.unk4));
+        try!(writer.write_u32::<LittleEndian>(self.unk5));
+        try!(writer.write_u32::<LittleEndian>(self.unk6));
+        try!(writer.write_u32::<LittleEndian>(self.unk7));
+        try!(writer.write_u32::<LittleEndian>(self.unk8));
+        try!(writer.write_u32::<LittleEndian>(self.unk9));
+        try!(writer.write_u32::<LittleEndian>(self.unk10));
+        try!(writer.write_u32::<LittleEndian>(self.unk11));
+        try!(writer.write_u32::<LittleEndian>(self.unk12));
+        try!(writer.write_u32::<LittleEndian>(self.unk13));
+        try!(writer.write_u32::<LittleEndian>(self.unk14));
+        try!(writer.write_u32::<LittleEndian>(self.unk15));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant1_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant2_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant3_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant4_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant5_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant6_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant7_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant8_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant9_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant10_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant11_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant12_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant13_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant14_name_index] as u32));
+        Ok(())
+    }
+    fn len(&self) -> i32 {
+        30 * 4
+    }
+}
+
 unk_chunk!(Extn, b"EXTN");
 unk_chunk!(Sounds, b"SOND");
 unk_chunk!(AudioGroups, b"AGRP");
@@ -607,6 +807,15 @@ impl<'a> Chunk<'a> for Textures {
         (num_textures_size + texture_offsets_size + texture_entries_size +
          self.texture_data.len()) as i32
     }
+}
+
+fn texture_data_offset(textures: &Textures, base_offset: u32) -> u32 {
+    let mut offset = base_offset + CHUNK_HEADER_LEN as u32;
+    let num_textures = textures.textures.len() as u32;
+    offset += 4; // num_textures
+    offset += num_textures * 4; // offset table
+    offset += num_textures * 8; // texture table
+    offset
 }
 
 fn read_string<R: GameDataRead>(reader: &mut R) -> Result<String, StringReadError> {

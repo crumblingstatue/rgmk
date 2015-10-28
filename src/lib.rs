@@ -18,7 +18,7 @@ use std::path;
 /// This is the collective information acquired from "data.win".
 pub struct GameData {
     pub metadata: MetaData,
-    optn: Optn,
+    options: Options,
     extn: Extn,
     sounds: Sounds,
     audio_groups: Option<AudioGroups>,
@@ -120,9 +120,38 @@ pub struct MetaData {
     unknown: Vec<u32>,
 }
 
-/// Purpose unknown.
-pub struct Optn {
-    raw: Vec<u8>, // Data not analyzed yet
+/// Game Maker project Options
+pub struct Options {
+    unk1: u32, // Unknown
+    unk2: u32, // Unknown
+    icon_offset: u32, // Points to texture data (icon?)
+    unk3: u32,
+    unk4: u32,
+    unk5: u32,
+    unk6: u32,
+    unk7: u32,
+    unk8: u32,
+    unk9: u32,
+    unk10: u32,
+    unk11: u32,
+    unk12: u32,
+    unk13: u32,
+    unk14: u32,
+    unk15: u32,
+    constant1_name_index: usize, // Offset of the name of this constant in the string table
+    constant2_name_index: usize, // Offset of the name of this constant in the string table
+    constant3_name_index: usize, // Offset of the name of this constant in the string table
+    constant4_name_index: usize, // Offset of the name of this constant in the string table
+    constant5_name_index: usize, // Offset of the name of this constant in the string table
+    constant6_name_index: usize, // Offset of the name of this constant in the string table
+    constant7_name_index: usize, // Offset of the name of this constant in the string table
+    constant8_name_index: usize, // Offset of the name of this constant in the string table
+    constant9_name_index: usize, // Offset of the name of this constant in the string table
+    constant10_name_index: usize, // Offset of the name of this constant in the string table
+    constant11_name_index: usize, // Offset of the name of this constant in the string table
+    constant12_name_index: usize, // Offset of the name of this constant in the string table
+    constant13_name_index: usize, // Offset of the name of this constant in the string table
+    constant14_name_index: usize, // Offset of the name of this constant in the string table
 }
 
 /// Purpose unknown.
