@@ -1,4 +1,7 @@
+//! Library for manipulating Game Maker Studio's "data.win" (GEN8) data files.
+
 #![feature(read_exact, associated_consts, associated_type_defaults)]
+#![warn(missing_docs)]
 
 #[macro_use]
 extern crate quick_error;
@@ -17,7 +20,7 @@ use std::path;
 ///
 /// This is the collective information acquired from "data.win".
 pub struct GameData {
-    pub metadata: MetaData,
+    metadata: MetaData,
     options: Options,
     extn: Extn,
     sounds: Sounds,
@@ -34,63 +37,69 @@ pub struct GameData {
     dafl: Dafl,
     tpag: Tpag,
     code: Code,
-    pub variables: Variables,
-    pub functions: Functions,
+    variables: Variables,
+    functions: Functions,
+    /// The strings of the game.
     pub strings: Strings,
     textures: Textures,
     audio: Audio,
 }
 
+/// A reader that satisfies the requirements for reading a GameData.
 pub trait GameDataRead: Read + io::Seek {}
 impl<T: Read + io::Seek> GameDataRead for T {}
+/// A writer that satisfies the requirements for writing a GameData.
 pub trait GameDataWrite: Write + io::Seek {}
 impl<T: Write + io::Seek> GameDataWrite for T {}
 
 impl GameData {
+    /// Reads a GameData from a reader.
     pub fn from_reader<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
         gamedata_io::read(reader)
     }
+    /// Reads a GameData from a file.
     pub fn from_file<P: AsRef<path::Path>>(path: &P) -> Result<GameData, ReadError> {
         use std::fs::File;
         use std::io::BufReader;
         let file = try!(File::open(path));
         GameData::from_reader(&mut BufReader::new(file))
     }
+    /// Writes self to a writer.
     pub fn write_to_writer<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         gamedata_io::write(self, writer)
     }
+    /// Writes self to a file.
     pub fn save_to_file<P: AsRef<path::Path>>(&self, path: &P) -> io::Result<()> {
         use std::fs::File;
         use std::io::BufWriter;
         let file = try!(File::create(path));
         self.write_to_writer(&mut BufWriter::new(file))
     }
-    pub fn string_at(&self, index: usize) -> &str {
-        &self.strings.strings[index]
-    }
-    pub fn replace_string_at<S: Into<String>>(&mut self, index: usize, with: S) {
-        self.strings.strings[index] = with.into();
-    }
+    /// Returns the window width of the game.
     pub fn window_width(&self) -> u32 {
         self.metadata.window_width
     }
+    /// Returns the window height of the game.
     pub fn window_height(&self) -> u32 {
         self.metadata.window_height
     }
+    /// Sets the window dimensions of the game.
     pub fn set_window_dimensions(&mut self, width: u32, height: u32) {
         self.metadata.window_width = width;
         self.metadata.window_height = height;
     }
+    /// Returns the window title of the game.
     pub fn window_title(&self) -> &str {
         &self.strings.strings[self.metadata.window_title_index]
     }
+    /// Sets the window title of the game.
     pub fn set_window_title<S: Into<String>>(&mut self, new: S) {
         self.strings.strings[self.metadata.window_title_index] = new.into();
     }
 }
 
-/// Contains various metadata.
-pub struct MetaData {
+/// Contains various metadata, for example, the window width/height/title.
+struct MetaData {
     unk1: u32, // Purpose unknown
     game_id_1_index: usize, // Some kind of game id
     default_index: usize, // Points to "Default"
@@ -121,7 +130,7 @@ pub struct MetaData {
 }
 
 /// Game Maker project Options
-pub struct Options {
+struct Options {
     unk1: u32, // Unknown
     unk2: u32, // Unknown
     icon_offset: u32, // Points to texture data (icon?)
@@ -155,11 +164,11 @@ pub struct Options {
 }
 
 /// Purpose unknown.
-pub struct Extn {
+struct Extn {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
-pub struct Sound {
+struct Sound {
     name_index: usize,
     unk1: u32,
     ext_index: usize,
@@ -172,84 +181,84 @@ pub struct Sound {
 }
 
 /// A collection of sounds.
-pub struct Sounds {
+struct Sounds {
     sounds: Vec<Sound>,
 }
 
 /// Collection of audio groups. Not present in all games.
-pub struct AudioGroups {
+struct AudioGroups {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of sprites.
-pub struct Sprites {
+struct Sprites {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of backgrounds.
-pub struct Backgrounds {
+struct Backgrounds {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of paths.
-pub struct Paths {
+struct Paths {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A game maker script.
-pub struct Script {
+struct Script {
     /// Index of the name of the script in the string table
     pub name_index: usize,
     unknown: u32, // Unknown
 }
 
 /// A collection of scripts.
-pub struct Scripts {
+struct Scripts {
     pub scripts: Vec<Script>,
 }
 
 /// A collection of shaders.
-pub struct Shaders {
+struct Shaders {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of fonts.
-pub struct Fonts {
+struct Fonts {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of timelines.
-pub struct Timelines {
+struct Timelines {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of objects.
-pub struct Objects {
+struct Objects {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of rooms.
-pub struct Rooms {
+struct Rooms {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// Purpose unknown.
-pub struct Dafl {
+struct Dafl {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// Purpose unknown.
-pub struct Tpag {
+struct Tpag {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// Something to do with code. Maybe code of scripts?
-pub struct Code {
+struct Code {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A game maker variable.
-pub struct Variable {
+struct Variable {
     /// Index of the name of the variable in the strings section.
     pub name_index: usize,
     unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
@@ -257,12 +266,12 @@ pub struct Variable {
 }
 
 /// A collection of variables.
-pub struct Variables {
+struct Variables {
     pub variables: Vec<Variable>,
 }
 
 /// A game maker function.
-pub struct Function {
+struct Function {
     /// Index of the name of the function in the strings section.
     pub name_index: usize,
     unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
@@ -270,7 +279,7 @@ pub struct Function {
 }
 
 /// A collection of functions.
-pub struct Functions {
+struct Functions {
     pub functions: Vec<Function>,
 }
 
@@ -278,26 +287,27 @@ pub struct Functions {
 ///
 /// All strings are assumed to be valid UTF-8.
 pub struct Strings {
+    /// The vector holding the strings.
     pub strings: Vec<String>,
 }
 
-pub struct Texture {
+struct Texture {
     unknown: u32, // Purpose unknown. Always seems to be 1.
     offset: u32, // Offset of data in the texture data
 }
 
 /// A collection of textures.
-pub struct Textures {
+struct Textures {
     pub textures: Vec<Texture>,
     texture_data: Vec<u8>,
 }
 
-pub struct AudioData {
+struct AudioData {
     data: Vec<u8>,
 }
 
 /// A collection of audio data.
-pub struct Audio {
+struct Audio {
     audio: Vec<AudioData>,
     offsets: Vec<u32>, // Audio data is not contiguous, so we need to store relative offsets
     size: u32, // Fuck it

@@ -3,33 +3,45 @@
 use std::io::prelude::*;
 use std::io;
 use byteorder::{self, ReadBytesExt, WriteBytesExt, LittleEndian};
-use super::*;
+use super::{GameData, MetaData, Options, Extn, Sound, Sounds, AudioGroups, Sprites, Backgrounds,
+            Paths, Script, Scripts, Shaders, Fonts, Timelines, Objects, Rooms, Dafl, Tpag, Code,
+            Variable, Variables, Function, Functions, Strings, Texture, Textures, AudioData,
+            Audio, GameDataRead, GameDataWrite};
 
 quick_error! {
     #[derive(Debug)]
+    /// Error when reading a string from the string table.
     pub enum StringReadError {
+        /// An I/O error.
         Io(err: io::Error) {
             from()
         }
+        /// A byte order error.
         ByteOrder(err: byteorder::Error) {
             from()
         }
+        /// Missing null terminator.
         MissingNullTerminator {}
     }
 }
 
 quick_error! {
     #[derive(Debug)]
+    /// Error when reading GameData from a reader.
     pub enum ReadError {
+        /// An I/O error.
         Io(err: io::Error) {
             from()
         }
+        /// A byte order error.
         ByteOrder(err: byteorder::Error) {
             from()
         }
+        /// A string read error.
         String(err: StringReadError) {
             from()
         }
+        /// Invalid chunk type id.
         InvalidChunkTypeId(what: [u8; 4]) { }
     }
 }
