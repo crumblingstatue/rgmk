@@ -159,9 +159,21 @@ pub struct Extn {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
+pub struct Sound {
+    name_index: usize,
+    unk1: u32,
+    ext_index: usize,
+    filename_index: usize,
+    unk2: u32,
+    unk3: u32,
+    unk4: u32,
+    unk5: u32,
+    unk6: u32,
+}
+
 /// A collection of sounds.
 pub struct Sounds {
-    raw: Vec<u8>, // Data not analyzed yet
+    sounds: Vec<Sound>,
 }
 
 /// Collection of audio groups. Not present in all games.

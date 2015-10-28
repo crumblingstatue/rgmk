@@ -42,7 +42,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     let (mut meta, meta_string_offsets) = try!(MetaData::read(reader));
     let (mut opts, opt_offsets) = try!(Options::read(reader));
     let extn = try!(Extn::read(reader));
-    let sounds = try!(Sounds::read(reader));
+    let (mut sounds, sound_string_offsets) = try!(Sounds::read(reader));
     let audio_groups = try!(AudioGroups::read(reader));
     let sprites = try!(Sprites::read(reader));
     let backgrounds = try!(Backgrounds::read(reader));
@@ -115,6 +115,19 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
         }
         if opt_offsets.const14_offset - 4 == soff {
             opts.constant14_name_index = i;
+        }
+    }
+    for (i, s) in sound_string_offsets.into_iter().enumerate() {
+        for (j, &soff) in offsets.iter().enumerate() {
+            if s.name_offset - 4 == soff {
+                sounds.sounds[i].name_index = j;
+            }
+            if s.ext_offset - 4 == soff {
+                sounds.sounds[i].ext_index = j;
+            }
+            if s.filename_offset - 4 == soff {
+                sounds.sounds[i].filename_index = j;
+            }
         }
     }
     for (i, off) in script_name_offsets.into_iter().enumerate() {
@@ -213,7 +226,7 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
                                                  data.strings.len() as u32 +
                                                  CHUNK_HEADER_LEN as u32))));
     try!(data.extn.write(writer, ()));
-    try!(data.sounds.write(writer, ()));
+    try!(data.sounds.write(writer, &string_offsets));
     if let Some(ref agrp) = data.audio_groups {
         try!(agrp.write(writer, ()));
     }
@@ -552,7 +565,6 @@ impl<'a> Chunk<'a> for Options {
 }
 
 unk_chunk!(Extn, b"EXTN");
-unk_chunk!(Sounds, b"SOND");
 unk_chunk!(AudioGroups, b"AGRP");
 unk_chunk!(Sprites, b"SPRT");
 unk_chunk!(Backgrounds, b"BGND");
@@ -565,6 +577,89 @@ unk_chunk!(Rooms, b"ROOM");
 unk_chunk!(Dafl, b"DAFL");
 unk_chunk!(Tpag, b"TPAG");
 unk_chunk!(Code, b"CODE");
+
+struct SoundStringOffsets {
+    name_offset: u32,
+    ext_offset: u32,
+    filename_offset: u32,
+}
+
+impl<'a> Chunk<'a> for Sounds {
+    const TYPE_ID: &'static [u8; 4] = b"SOND";
+    type ReadOutput = (Self, Vec<SoundStringOffsets>);
+    type WriteInput = &'a Vec<i32>;
+    fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
+        try!(get_chunk_header(reader, Self::TYPE_ID));
+        let num_sounds = try!(reader.read_u32::<LittleEndian>());
+        trace!("{} sounds", num_sounds);
+        // Read sound entry offsets
+        for _ in 0..num_sounds {
+            // For now just discard them
+            try!(reader.read_u32::<LittleEndian>());
+        }
+        // Read sound entries
+        let mut sounds = Vec::new();
+        let mut offsets = Vec::new();
+        for _ in 0..num_sounds {
+            let name_offset = try!(reader.read_u32::<LittleEndian>());
+            let unk1 = try!(reader.read_u32::<LittleEndian>());
+            let ext_offset = try!(reader.read_u32::<LittleEndian>());
+            let filename_offset = try!(reader.read_u32::<LittleEndian>());
+            let unk2 = try!(reader.read_u32::<LittleEndian>());
+            let unk3 = try!(reader.read_u32::<LittleEndian>());
+            let unk4 = try!(reader.read_u32::<LittleEndian>());
+            let unk5 = try!(reader.read_u32::<LittleEndian>());
+            let unk6 = try!(reader.read_u32::<LittleEndian>());
+            sounds.push(Sound {
+                name_index: 0,
+                unk1: unk1,
+                ext_index: 0,
+                filename_index: 0,
+                unk2: unk2,
+                unk3: unk3,
+                unk4: unk4,
+                unk5: unk5,
+                unk6: unk6,
+            });
+            offsets.push(SoundStringOffsets {
+                name_offset: name_offset,
+                ext_offset: ext_offset,
+                filename_offset: filename_offset,
+            });
+        }
+        Ok((Sounds { sounds: sounds }, offsets))
+    }
+    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
+        try!(writer.write_all(Self::TYPE_ID));
+        try!(writer.write_i32::<LittleEndian>(self.len()));
+        let num_sounds = self.sounds.len() as u32;
+        try!(writer.write_u32::<LittleEndian>(num_sounds));
+        let writer_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32;
+        let sound_data_offset = writer_offset + (num_sounds * 4);
+        for i in 0..num_sounds {
+            try!(writer.write_u32::<LittleEndian>(sound_data_offset + (i * (9 * 4))));
+        }
+        for s in &self.sounds {
+            try!(writer.write_u32::<LittleEndian>(input[s.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(s.unk1));
+            try!(writer.write_u32::<LittleEndian>(input[s.ext_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(input[s.filename_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(s.unk2));
+            try!(writer.write_u32::<LittleEndian>(s.unk3));
+            try!(writer.write_u32::<LittleEndian>(s.unk4));
+            try!(writer.write_u32::<LittleEndian>(s.unk5));
+            try!(writer.write_u32::<LittleEndian>(s.unk6));
+        }
+        Ok(())
+    }
+    fn len(&self) -> i32 {
+        let num_sounds_size = 4;
+        let num_sounds = self.sounds.len() as i32;
+        let offsets_size = num_sounds * 4;
+        let sounds_size = num_sounds * (9 * 4);
+        num_sounds_size + offsets_size + sounds_size
+    }
+}
 
 impl<'a> Chunk<'a> for Scripts {
     const TYPE_ID: &'static [u8; 4] = b"SCPT";
