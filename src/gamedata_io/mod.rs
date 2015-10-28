@@ -3,10 +3,9 @@
 use std::io::prelude::*;
 use std::io;
 use byteorder::{self, ReadBytesExt, WriteBytesExt, LittleEndian};
-use super::{GameData, MetaData, Options, Extn, Sounds, AudioGroups, Sprites, Backgrounds,
-            Paths, Scripts, Shaders, Fonts, Timelines, Objects, Rooms, Dafl, Tpag, Code,
-            Variables, Functions, Strings, Textures,
-            Audio, GameDataRead, GameDataWrite};
+use super::{GameData, MetaData, Options, Extn, Sounds, AudioGroups, Sprites, Backgrounds, Paths,
+            Scripts, Shaders, Fonts, Timelines, Objects, Rooms, Dafl, Tpag, Code, Variables,
+            Functions, Strings, Textures, Audio, GameDataRead, GameDataWrite};
 
 mod meta_data;
 mod options;
