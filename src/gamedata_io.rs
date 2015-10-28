@@ -47,7 +47,7 @@ quick_error! {
 }
 
 const TYPE_ID_LEN: usize = 4;
-const CHUNK_HEADER_LEN: i32 = TYPE_ID_LEN as i32 + 4;
+const CHUNK_HEADER_LEN: u32 = TYPE_ID_LEN as u32 + 4;
 
 pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     try!(get_chunk_header(reader, b"FORM"));
@@ -197,7 +197,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     })
 }
 
-fn form_content_len(data: &GameData) -> i32 {
+fn form_content_len(data: &GameData) -> u32 {
     data.metadata.content_size() + CHUNK_HEADER_LEN + data.options.content_size() +
     CHUNK_HEADER_LEN + data.extn.content_size() + CHUNK_HEADER_LEN +
     data.sounds.content_size() + CHUNK_HEADER_LEN +
@@ -220,7 +220,7 @@ fn form_content_len(data: &GameData) -> i32 {
 
 pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()> {
     try!(writer.write_all(b"FORM"));
-    try!(writer.write_i32::<LittleEndian>(form_content_len(data)));
+    try!(writer.write_u32::<LittleEndian>(form_content_len(data)));
     let stringtable_offset = data.metadata.content_size() + data.options.content_size() +
                              data.extn.content_size() +
                              data.audio_groups
@@ -275,13 +275,13 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     Ok(())
 }
 
-fn string_offsets(strings: &Strings, base_offset: i32) -> Vec<i32> {
-    let mut offset = base_offset + CHUNK_HEADER_LEN + 4 + (strings.strings.len() as i32 * 4);
+fn string_offsets(strings: &Strings, base_offset: u32) -> Vec<u32> {
+    let mut offset = base_offset + CHUNK_HEADER_LEN + 4 + (strings.strings.len() as u32 * 4);
     let mut offsets = Vec::new();
     for string in &strings.strings {
         // +4 because functions point right into the string
         offsets.push(offset + 4);
-        offset += (string.len() + 1) as i32 + 4;
+        offset += (string.len() + 1) as u32 + 4;
     }
     offsets
 }
@@ -293,7 +293,7 @@ trait Chunk<'a> {
     type WriteInput = ();
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
     fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()>;
-    fn content_size(&self) -> i32;
+    fn content_size(&self) -> u32;
 }
 
 macro_rules! unk_chunk {
@@ -308,12 +308,12 @@ macro_rules! unk_chunk {
             }
             fn write<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
                 try!(writer.write_all(Self::TYPE_ID));
-                try!(writer.write_i32::<LittleEndian>(self.content_size()));
+                try!(writer.write_u32::<LittleEndian>(self.content_size()));
                 try!(writer.write_all(&self.raw));
                 Ok(())
             }
-            fn content_size(&self) -> i32 {
-                self.raw.len() as i32
+            fn content_size(&self) -> u32 {
+                self.raw.len() as u32
             }
         }
     }
@@ -330,7 +330,7 @@ struct MetaDataOffsets {
 impl<'a> Chunk<'a> for MetaData {
     const TYPE_ID: &'static [u8; 4] = b"GEN8";
     type ReadOutput = (Self, MetaDataOffsets);
-    type WriteInput = &'a [i32];
+    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
@@ -404,7 +404,7 @@ impl<'a> Chunk<'a> for MetaData {
     }
     fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_i32::<LittleEndian>(self.content_size()));
+        try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.unk1));
         try!(writer.write_u32::<LittleEndian>(input[self.game_id_1_index] as u32));
         try!(writer.write_u32::<LittleEndian>(input[self.default_index] as u32));
@@ -436,8 +436,8 @@ impl<'a> Chunk<'a> for MetaData {
         }
         Ok(())
     }
-    fn content_size(&self) -> i32 {
-        (self.unknown.len() as i32 * 4) + (26 * 4)
+    fn content_size(&self) -> u32 {
+        (self.unknown.len() as u32 * 4) + (26 * 4)
     }
 }
 
@@ -463,7 +463,7 @@ struct OptionOffsets {
 impl<'a> Chunk<'a> for Options {
     const TYPE_ID: &'static [u8; 4] = b"OPTN";
     type ReadOutput = (Self, OptionOffsets);
-    type WriteInput = (&'a [i32], u32);
+    type WriteInput = (&'a [u32], u32);
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
@@ -551,7 +551,7 @@ impl<'a> Chunk<'a> for Options {
                                (input, texture_data_offset): Self::WriteInput)
                                -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_i32::<LittleEndian>(self.content_size()));
+        try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.unk1));
         try!(writer.write_u32::<LittleEndian>(self.unk2));
         try!(writer.write_u32::<LittleEndian>(texture_data_offset + self.icon_offset));
@@ -584,7 +584,7 @@ impl<'a> Chunk<'a> for Options {
         try!(writer.write_u32::<LittleEndian>(input[self.constant14_name_index] as u32));
         Ok(())
     }
-    fn content_size(&self) -> i32 {
+    fn content_size(&self) -> u32 {
         30 * 4
     }
 }
@@ -612,7 +612,7 @@ struct SoundStringOffsets {
 impl<'a> Chunk<'a> for Sounds {
     const TYPE_ID: &'static [u8; 4] = b"SOND";
     type ReadOutput = (Self, Vec<SoundStringOffsets>);
-    type WriteInput = &'a [i32];
+    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let num_sounds = try!(reader.read_u32::<LittleEndian>());
@@ -656,7 +656,7 @@ impl<'a> Chunk<'a> for Sounds {
     }
     fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_i32::<LittleEndian>(self.content_size()));
+        try!(writer.write_u32::<LittleEndian>(self.content_size()));
         let num_sounds = self.sounds.len() as u32;
         try!(writer.write_u32::<LittleEndian>(num_sounds));
         let writer_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32;
@@ -677,9 +677,9 @@ impl<'a> Chunk<'a> for Sounds {
         }
         Ok(())
     }
-    fn content_size(&self) -> i32 {
+    fn content_size(&self) -> u32 {
         let num_sounds_size = 4;
-        let num_sounds = self.sounds.len() as i32;
+        let num_sounds = self.sounds.len() as u32;
         let offsets_size = num_sounds * 4;
         let sounds_size = num_sounds * (9 * 4);
         num_sounds_size + offsets_size + sounds_size
@@ -689,7 +689,7 @@ impl<'a> Chunk<'a> for Sounds {
 impl<'a> Chunk<'a> for Scripts {
     const TYPE_ID: &'static [u8; 4] = b"SCPT";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a [i32];
+    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let num_scripts = try!(reader.read_u32::<LittleEndian>());
@@ -712,7 +712,7 @@ impl<'a> Chunk<'a> for Scripts {
     }
     fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_i32::<LittleEndian>(self.content_size()));
+        try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.scripts.len() as u32));
         let writer_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32;
         let first_script_offset = writer_offset + (self.scripts.len() as u32 * 4);
@@ -727,15 +727,15 @@ impl<'a> Chunk<'a> for Scripts {
         }
         Ok(())
     }
-    fn content_size(&self) -> i32 {
-        4 + (self.scripts.len() as i32 * (4 + (2 * 4)))
+    fn content_size(&self) -> u32 {
+        4 + (self.scripts.len() as u32 * (4 + (2 * 4)))
     }
 }
 
 impl<'a> Chunk<'a> for Variables {
     const TYPE_ID: &'static [u8; 4] = b"VARI";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a [i32];
+    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
@@ -759,7 +759,7 @@ impl<'a> Chunk<'a> for Variables {
     fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         let len = self.content_size();
-        try!(writer.write_i32::<LittleEndian>(len));
+        try!(writer.write_u32::<LittleEndian>(len));
         for var in &self.variables {
             try!(writer.write_u32::<LittleEndian>(input[var.name_index] as u32));
             try!(writer.write_u32::<LittleEndian>(var.unknown));
@@ -767,15 +767,15 @@ impl<'a> Chunk<'a> for Variables {
         }
         Ok(())
     }
-    fn content_size(&self) -> i32 {
-        (self.variables.len() * (3 * 4)) as i32
+    fn content_size(&self) -> u32 {
+        (self.variables.len() * (3 * 4)) as u32
     }
 }
 
 impl<'a> Chunk<'a> for Functions {
     const TYPE_ID: &'static [u8; 4] = b"FUNC";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a [i32];
+    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
@@ -799,7 +799,7 @@ impl<'a> Chunk<'a> for Functions {
     fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
         let len = self.content_size();
-        try!(writer.write_i32::<LittleEndian>(len));
+        try!(writer.write_u32::<LittleEndian>(len));
         for fun in &self.functions {
             try!(writer.write_u32::<LittleEndian>(input[fun.name_index] as u32));
             try!(writer.write_u32::<LittleEndian>(fun.unknown));
@@ -807,15 +807,15 @@ impl<'a> Chunk<'a> for Functions {
         }
         Ok(())
     }
-    fn content_size(&self) -> i32 {
-        (self.functions.len() * (3 * 4)) as i32
+    fn content_size(&self) -> u32 {
+        (self.functions.len() * (3 * 4)) as u32
     }
 }
 
 impl<'a> Chunk<'a> for Strings {
     const TYPE_ID: &'static [u8; 4] = b"STRG";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = i32;
+    type WriteInput = u32;
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let count = try!(reader.read_u32::<LittleEndian>());
@@ -835,14 +835,14 @@ impl<'a> Chunk<'a> for Strings {
         try!(reader.read_exact(&mut buf));
         Ok((Strings { strings: strings }, offsets))
     }
-    fn write<W: GameDataWrite>(&self, writer: &mut W, offset: i32) -> io::Result<()> {
+    fn write<W: GameDataWrite>(&self, writer: &mut W, offset: u32) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_i32::<LittleEndian>(self.content_size()));
+        try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
-        let mut string_offset = offset + CHUNK_HEADER_LEN + 4 + (self.strings.len() as i32 * 4);
+        let mut string_offset = offset + CHUNK_HEADER_LEN + 4 + (self.strings.len() as u32 * 4);
         for string in &self.strings {
             try!(writer.write_u32::<LittleEndian>(string_offset as u32));
-            string_offset += (string.len() + 1) as i32 + 4;
+            string_offset += (string.len() + 1) as u32 + 4;
         }
         for string in &self.strings {
             try!(writer.write_u32::<LittleEndian>(string.len() as u32));
@@ -853,7 +853,7 @@ impl<'a> Chunk<'a> for Strings {
         try!(writer.write_all(&[0u8; 4]));
         Ok(())
     }
-    fn content_size(&self) -> i32 {
+    fn content_size(&self) -> u32 {
         let mut lengths = 0;
         for s in &self.strings {
             // The length denominator before the string
@@ -862,7 +862,7 @@ impl<'a> Chunk<'a> for Strings {
             lengths += s.len() + 1;
         }
         // +4 at end for zero padding
-        (4 + (self.strings.len() * 4) + lengths + 4) as i32
+        (4 + (self.strings.len() * 4) + lengths + 4) as u32
     }
 }
 
@@ -899,7 +899,7 @@ impl<'a> Chunk<'a> for Textures {
     }
     fn write<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_i32::<LittleEndian>(self.content_size()));
+        try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.textures.len() as u32));
         let writer_offset = try!(writer.seek(io::SeekFrom::Current(0)));
         let num_textures = self.textures.len() as u32;
@@ -918,13 +918,13 @@ impl<'a> Chunk<'a> for Textures {
         try!(writer.write_all(&self.texture_data));
         Ok(())
     }
-    fn content_size(&self) -> i32 {
+    fn content_size(&self) -> u32 {
         let num_textures = self.textures.len();
         let num_textures_size = 4;
         let texture_offsets_size = num_textures * 4;
         let texture_entries_size = num_textures * 8;
         (num_textures_size + texture_offsets_size + texture_entries_size +
-         self.texture_data.len()) as i32
+         self.texture_data.len()) as u32
     }
 }
 
@@ -963,7 +963,7 @@ impl<'a> Chunk<'a> for Audio {
     }
     fn write<W: GameDataWrite>(&self, writer: &mut W, _: ()) -> io::Result<()> {
         try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_i32::<LittleEndian>(self.content_size()));
+        try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.audio.len() as u32));
         let audio_data_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32 +
                                 (self.offsets.len() as u32 * 4);
@@ -978,8 +978,8 @@ impl<'a> Chunk<'a> for Audio {
         }
         Ok(())
     }
-    fn content_size(&self) -> i32 {
-        self.size as i32
+    fn content_size(&self) -> u32 {
+        self.size as u32
     }
 }
 
@@ -1017,7 +1017,7 @@ fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, Rea
     let offset = try!(reader.seek(io::SeekFrom::Current(0)));
     let mut type_id = [0u8; TYPE_ID_LEN];
     try!(reader.read_exact(&mut type_id));
-    let size = try!(reader.read_i32::<LittleEndian>());
+    let size = try!(reader.read_u32::<LittleEndian>());
     info!("Read chunk {} with size {:>9} @ {:>9}",
           String::from_utf8_lossy(&type_id),
           size,
