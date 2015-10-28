@@ -1,7 +1,7 @@
 //! Library for manipulating Game Maker Studio's "data.win" (GEN8) data files.
 
 #![feature(read_exact, associated_consts, associated_type_defaults)]
-#![warn(missing_docs)]
+#![warn(missing_docs, trivial_casts, trivial_numeric_casts)]
 
 #[macro_use]
 extern crate quick_error;

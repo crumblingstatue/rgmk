@@ -247,9 +247,8 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     try!(data.options.write(writer,
                             (&string_offsets,
                              texture_data_offset(&data.textures,
-                                                 stringtable_offset as u32 +
-                                                 data.strings.content_size() as u32 +
-                                                 CHUNK_HEADER_LEN as u32))));
+                                                 stringtable_offset + data.strings.content_size() +
+                                                 CHUNK_HEADER_LEN))));
     try!(data.extn.write(writer, ()));
     try!(data.sounds.write(writer, &string_offsets));
     if let Some(ref agrp) = data.audio_groups {
@@ -406,8 +405,8 @@ impl<'a> Chunk<'a> for MetaData {
         try!(writer.write_all(Self::TYPE_ID));
         try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.unk1));
-        try!(writer.write_u32::<LittleEndian>(input[self.game_id_1_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.default_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.game_id_1_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.default_index]));
         try!(writer.write_u32::<LittleEndian>(self.unk2));
         try!(writer.write_u32::<LittleEndian>(self.unk3));
         try!(writer.write_u32::<LittleEndian>(self.unk4));
@@ -415,7 +414,7 @@ impl<'a> Chunk<'a> for MetaData {
         try!(writer.write_u32::<LittleEndian>(self.unk6));
         try!(writer.write_u32::<LittleEndian>(self.unk7));
         try!(writer.write_u32::<LittleEndian>(self.unk8));
-        try!(writer.write_u32::<LittleEndian>(input[self.game_id_2_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.game_id_2_index]));
         try!(writer.write_u32::<LittleEndian>(self.unk9));
         try!(writer.write_u32::<LittleEndian>(self.unk10));
         try!(writer.write_u32::<LittleEndian>(self.unk11));
@@ -430,7 +429,7 @@ impl<'a> Chunk<'a> for MetaData {
         try!(writer.write_u32::<LittleEndian>(self.unk18));
         try!(writer.write_u32::<LittleEndian>(self.unk19));
         try!(writer.write_u32::<LittleEndian>(self.unk20));
-        try!(writer.write_u32::<LittleEndian>(input[self.window_title_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.window_title_index]));
         for &v in &self.unknown {
             try!(writer.write_u32::<LittleEndian>(v));
         }
@@ -568,20 +567,20 @@ impl<'a> Chunk<'a> for Options {
         try!(writer.write_u32::<LittleEndian>(self.unk13));
         try!(writer.write_u32::<LittleEndian>(self.unk14));
         try!(writer.write_u32::<LittleEndian>(self.unk15));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant1_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant2_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant3_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant4_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant5_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant6_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant7_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant8_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant9_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant10_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant11_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant12_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant13_name_index] as u32));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant14_name_index] as u32));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant1_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant2_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant3_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant4_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant5_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant6_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant7_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant8_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant9_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant10_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant11_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant12_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant13_name_index]));
+        try!(writer.write_u32::<LittleEndian>(input[self.constant14_name_index]));
         Ok(())
     }
     fn content_size(&self) -> u32 {
@@ -665,10 +664,10 @@ impl<'a> Chunk<'a> for Sounds {
             try!(writer.write_u32::<LittleEndian>(sound_data_offset + (i * (9 * 4))));
         }
         for s in &self.sounds {
-            try!(writer.write_u32::<LittleEndian>(input[s.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(input[s.name_index]));
             try!(writer.write_u32::<LittleEndian>(s.unk1));
-            try!(writer.write_u32::<LittleEndian>(input[s.ext_index] as u32));
-            try!(writer.write_u32::<LittleEndian>(input[s.filename_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(input[s.ext_index]));
+            try!(writer.write_u32::<LittleEndian>(input[s.filename_index]));
             try!(writer.write_u32::<LittleEndian>(s.unk2));
             try!(writer.write_u32::<LittleEndian>(s.unk3));
             try!(writer.write_u32::<LittleEndian>(s.unk4));
@@ -722,7 +721,7 @@ impl<'a> Chunk<'a> for Scripts {
         }
         // Write script data
         for s in &self.scripts {
-            try!(writer.write_u32::<LittleEndian>(input[s.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(input[s.name_index]));
             try!(writer.write_u32::<LittleEndian>(s.unknown));
         }
         Ok(())
@@ -761,7 +760,7 @@ impl<'a> Chunk<'a> for Variables {
         let len = self.content_size();
         try!(writer.write_u32::<LittleEndian>(len));
         for var in &self.variables {
-            try!(writer.write_u32::<LittleEndian>(input[var.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(input[var.name_index]));
             try!(writer.write_u32::<LittleEndian>(var.unknown));
             try!(writer.write_u32::<LittleEndian>(var.code_offset));
         }
@@ -801,7 +800,7 @@ impl<'a> Chunk<'a> for Functions {
         let len = self.content_size();
         try!(writer.write_u32::<LittleEndian>(len));
         for fun in &self.functions {
-            try!(writer.write_u32::<LittleEndian>(input[fun.name_index] as u32));
+            try!(writer.write_u32::<LittleEndian>(input[fun.name_index]));
             try!(writer.write_u32::<LittleEndian>(fun.unknown));
             try!(writer.write_u32::<LittleEndian>(fun.code_offset));
         }
@@ -841,7 +840,7 @@ impl<'a> Chunk<'a> for Strings {
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
         let mut string_offset = offset + CHUNK_HEADER_LEN + 4 + (self.strings.len() as u32 * 4);
         for string in &self.strings {
-            try!(writer.write_u32::<LittleEndian>(string_offset as u32));
+            try!(writer.write_u32::<LittleEndian>(string_offset));
             string_offset += (string.len() + 1) as u32 + 4;
         }
         for string in &self.strings {
@@ -979,12 +978,12 @@ impl<'a> Chunk<'a> for Audio {
         Ok(())
     }
     fn content_size(&self) -> u32 {
-        self.size as u32
+        self.size
     }
 }
 
 fn texture_data_offset(textures: &Textures, base_offset: u32) -> u32 {
-    let mut offset = base_offset + CHUNK_HEADER_LEN as u32;
+    let mut offset = base_offset + CHUNK_HEADER_LEN;
     let num_textures = textures.textures.len() as u32;
     offset += 4; // num_textures
     offset += num_textures * 4; // offset table
