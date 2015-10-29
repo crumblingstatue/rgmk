@@ -28,10 +28,11 @@ impl<'a> Chunk<'a> for Functions {
         }
         Ok((Functions { functions: funs }, offsets))
     }
-    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
-        try!(writer.write_all(Self::TYPE_ID));
-        let len = self.content_size();
-        try!(writer.write_u32::<LittleEndian>(len));
+    chunk_write_impl!();
+    fn write_content<W: GameDataWrite>(&self,
+                                       writer: &mut W,
+                                       input: Self::WriteInput)
+                                       -> io::Result<()> {
         for fun in &self.functions {
             try!(writer.write_u32::<LittleEndian>(input[fun.name_index]));
             try!(writer.write_u32::<LittleEndian>(fun.unknown));

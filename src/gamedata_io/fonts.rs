@@ -58,9 +58,10 @@ impl<'a> Chunk<'a> for Fonts {
         },
             string_offsets))
     }
-    fn write<W: GameDataWrite>(&self, writer: &mut W, string_offsets: &'a [u32]) -> io::Result<()> {
-        try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_u32::<LittleEndian>(self.content_size()));
+    fn write_content<W: GameDataWrite>(&self,
+                                       writer: &mut W,
+                                       string_offsets: &'a [u32])
+                                       -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.fonts.len() as u32));
         let write_offset = try!(writer.tell()) as u32;
         let count = self.fonts.len() as u32;
@@ -76,6 +77,7 @@ impl<'a> Chunk<'a> for Fonts {
         try!(writer.write_all(&self.unknown));
         Ok(())
     }
+    chunk_write_impl!();
     fn content_size(&self) -> u32 {
         let count = self.fonts.len() as u32;
         let count_size = 4;
