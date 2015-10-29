@@ -208,7 +208,7 @@ pub struct Sprite {
     pub width: u32,
     /// The height of the sprite
     pub height: u32,
-    unknown: Vec<u8>,
+    pub unknown: Vec<u8>,
 }
 
 /// A collection of sprites.
