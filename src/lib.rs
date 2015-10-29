@@ -171,6 +171,7 @@ struct Extn {
 }
 
 /// A game maker sound.
+#[derive(Clone, Copy)]
 pub struct Sound {
     /// Index of the name in the string table.
     pub name_index: usize,
