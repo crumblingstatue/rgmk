@@ -23,7 +23,8 @@ pub struct GameData {
     metadata: MetaData,
     options: Options,
     extn: Extn,
-    sounds: Sounds,
+    /// The sounds of the game.
+    pub sounds: Sounds,
     audio_groups: Option<AudioGroups>,
     sprites: Sprites,
     backgrounds: Backgrounds,
@@ -169,11 +170,15 @@ struct Extn {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
-struct Sound {
-    name_index: usize,
+/// A game maker sound.
+pub struct Sound {
+    /// Index of the name in the string table.
+    pub name_index: usize,
     unk1: u32,
-    ext_index: usize,
-    filename_index: usize,
+    /// Index of the extension in the string table.
+    pub ext_index: usize,
+    /// Index of the filename in the string table.
+    pub filename_index: usize,
     unk2: u32,
     unk3: u32,
     unk4: u32,
@@ -182,8 +187,9 @@ struct Sound {
 }
 
 /// A collection of sounds.
-struct Sounds {
-    sounds: Vec<Sound>,
+pub struct Sounds {
+    /// The sounds.
+    pub sounds: Vec<Sound>,
 }
 
 /// Collection of audio groups. Not present in all games.
