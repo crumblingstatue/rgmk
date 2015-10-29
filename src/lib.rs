@@ -26,7 +26,8 @@ pub struct GameData {
     /// The sounds of the game.
     pub sounds: Sounds,
     audio_groups: Option<AudioGroups>,
-    sprites: Sprites,
+    /// The sprites of the game.
+    pub sprites: Sprites,
     backgrounds: Backgrounds,
     paths: Paths,
     scripts: Scripts,
@@ -210,7 +211,7 @@ pub struct Sprite {
 }
 
 /// A collection of sprites.
-struct Sprites {
+pub struct Sprites {
     /// The sprites
     pub sprites: Vec<Sprite>,
 }
