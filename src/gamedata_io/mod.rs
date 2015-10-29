@@ -17,6 +17,7 @@ mod strings;
 mod textures;
 mod audio;
 mod fonts;
+mod sprites;
 
 pub use self::strings::StringReadError;
 
@@ -51,7 +52,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     let extn = try!(Extn::read(reader));
     let (mut sounds, sound_string_offsets) = try!(Sounds::read(reader));
     let audio_groups = try!(AudioGroups::read(reader));
-    let sprites = try!(Sprites::read(reader));
+    let (mut sprites, sprite_name_offsets) = try!(Sprites::read(reader));
     let backgrounds = try!(Backgrounds::read(reader));
     let paths = try!(Paths::read(reader));
     let (mut scripts, script_name_offsets) = try!(Scripts::read(reader));
@@ -148,6 +149,14 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
                 fonts.fonts[i].font_name_index = j;
                 trace!("font name: {}", strings.strings[j]);
                 trace!("point size: {}", fonts.fonts[i].point_size);
+            }
+        }
+    }
+    for (i, off) in sprite_name_offsets.into_iter().enumerate() {
+        for (j, &soff) in offsets.iter().enumerate() {
+            if off - 4 == soff {
+                sprites.sprites[i].name_index = j;
+                break;
             }
         }
     }
@@ -263,7 +272,7 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     if let Some(ref agrp) = data.audio_groups {
         try!(agrp.write(writer, ()));
     }
-    try!(data.sprites.write(writer, ()));
+    try!(data.sprites.write(writer, &string_offsets));
     try!(data.backgrounds.write(writer, ()));
     try!(data.paths.write(writer, ()));
     try!(data.scripts.write(writer, &string_offsets));
@@ -329,7 +338,6 @@ macro_rules! unk_chunk {
 
 unk_chunk!(Extn, b"EXTN");
 unk_chunk!(AudioGroups, b"AGRP");
-unk_chunk!(Sprites, b"SPRT");
 unk_chunk!(Backgrounds, b"BGND");
 unk_chunk!(Paths, b"PATH");
 unk_chunk!(Shaders, b"SHDR");

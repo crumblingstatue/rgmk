@@ -198,9 +198,21 @@ struct AudioGroups {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
+/// A game maker sprite.
+pub struct Sprite {
+    /// The index of the resource name in the string table.
+    pub name_index: usize,
+    /// The width of the sprite
+    pub width: u32,
+    /// The height of the sprite
+    pub height: u32,
+    unknown: Vec<u8>,
+}
+
 /// A collection of sprites.
 struct Sprites {
-    raw: Vec<u8>, // Data not analyzed yet
+    /// The sprites
+    pub sprites: Vec<Sprite>,
 }
 
 /// A collection of backgrounds.
