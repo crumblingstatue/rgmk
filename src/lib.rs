@@ -329,13 +329,12 @@ pub struct Strings {
 
 struct Texture {
     unknown: u32, // Purpose unknown. Always seems to be 1.
-    offset: u32, // Offset of data in the texture data
+    png_data: Vec<u8>,
 }
 
 /// A collection of textures.
 struct Textures {
     pub textures: Vec<Texture>,
-    texture_data: Vec<u8>,
 }
 
 struct AudioData {
