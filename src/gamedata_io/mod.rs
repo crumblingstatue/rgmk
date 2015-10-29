@@ -16,6 +16,7 @@ mod functions;
 mod strings;
 mod textures;
 mod audio;
+mod fonts;
 
 pub use self::strings::StringReadError;
 
@@ -55,7 +56,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     let paths = try!(Paths::read(reader));
     let (mut scripts, script_name_offsets) = try!(Scripts::read(reader));
     let shaders = try!(Shaders::read(reader));
-    let fonts = try!(Fonts::read(reader));
+    let (mut fonts, font_string_offsets) = try!(Fonts::read(reader));
     let timelines = try!(Timelines::read(reader));
     let objects = try!(Objects::read(reader));
     let rooms = try!(Rooms::read(reader));
@@ -133,6 +134,20 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
             }
             if s.filename_offset - 4 == soff {
                 sounds.sounds[i].filename_index = j;
+            }
+        }
+    }
+    for (i, f) in font_string_offsets.into_iter().enumerate() {
+        trace!("Assinging string indexes for font {}", i);
+        for (j, &soff) in offsets.iter().enumerate() {
+            if f.name - 4 == soff {
+                fonts.fonts[i].name_index = j;
+                trace!("name: {}", strings.strings[j]);
+            }
+            if f.font_name - 4 == soff {
+                fonts.fonts[i].font_name_index = j;
+                trace!("font name: {}", strings.strings[j]);
+                trace!("point size: {}", fonts.fonts[i].point_size);
             }
         }
     }
@@ -253,7 +268,7 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     try!(data.paths.write(writer, ()));
     try!(data.scripts.write(writer, &string_offsets));
     try!(data.shaders.write(writer, ()));
-    try!(data.fonts.write(writer, ()));
+    try!(data.fonts.write(writer, &string_offsets));
     try!(data.timelines.write(writer, ()));
     try!(data.objects.write(writer, ()));
     try!(data.rooms.write(writer, ()));
@@ -318,7 +333,6 @@ unk_chunk!(Sprites, b"SPRT");
 unk_chunk!(Backgrounds, b"BGND");
 unk_chunk!(Paths, b"PATH");
 unk_chunk!(Shaders, b"SHDR");
-unk_chunk!(Fonts, b"FONT");
 unk_chunk!(Timelines, b"TMLN");
 unk_chunk!(Objects, b"OBJT");
 unk_chunk!(Rooms, b"ROOM");

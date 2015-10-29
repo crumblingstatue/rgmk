@@ -222,9 +222,18 @@ struct Shaders {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
+/// A font.
+struct Font {
+    name_index: usize,
+    font_name_index: usize,
+    point_size: u32,
+    data: Vec<u8>,
+}
+
 /// A collection of fonts.
 struct Fonts {
-    raw: Vec<u8>, // Data not analyzed yet
+    fonts: Vec<Font>,
+    unknown: Vec<u8>, // Unknown trailing data
 }
 
 /// A collection of timelines.
