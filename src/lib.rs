@@ -200,6 +200,7 @@ struct AudioGroups {
 }
 
 /// A game maker sprite.
+#[derive(Clone)]
 pub struct Sprite {
     /// The index of the resource name in the string table.
     pub name_index: usize,
