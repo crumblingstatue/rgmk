@@ -247,30 +247,11 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     })
 }
 
-fn form_content_len(data: &GameData) -> u32 {
-    data.metadata.content_size() + CHUNK_HEADER_LEN + data.options.content_size() +
-    CHUNK_HEADER_LEN + data.extn.content_size() + CHUNK_HEADER_LEN +
-    data.sounds.content_size() + CHUNK_HEADER_LEN +
-    data.audio_groups.as_ref().map_or(0, |a| a.content_size() + CHUNK_HEADER_LEN) +
-    data.sprites.content_size() + CHUNK_HEADER_LEN + data.backgrounds.content_size() +
-    CHUNK_HEADER_LEN + data.paths.content_size() + CHUNK_HEADER_LEN +
-    data.scripts.content_size() + CHUNK_HEADER_LEN +
-    data.shaders.content_size() + CHUNK_HEADER_LEN +
-    data.fonts.content_size() + CHUNK_HEADER_LEN + data.timelines.content_size() +
-    CHUNK_HEADER_LEN + data.objects.content_size() +
-    CHUNK_HEADER_LEN +
-    data.rooms.content_size() + CHUNK_HEADER_LEN + data.dafl.content_size() + CHUNK_HEADER_LEN +
-    data.tpag.content_size() + CHUNK_HEADER_LEN + data.code.content_size() +
-    CHUNK_HEADER_LEN + data.variables.content_size() +
-    CHUNK_HEADER_LEN + data.functions.content_size() +
-    CHUNK_HEADER_LEN + data.strings.content_size() +
-    CHUNK_HEADER_LEN + data.textures.content_size() + CHUNK_HEADER_LEN +
-    data.audio.content_size() + CHUNK_HEADER_LEN
-}
-
 pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()> {
     try!(writer.write_all(b"FORM"));
-    try!(writer.write_u32::<LittleEndian>(form_content_len(data)));
+    // Skip writing the chunk size, we'll go back to it later
+    let size_offset = try!(writer.tell());
+    try!(writer.seek(io::SeekFrom::Current(4)));
     let stringtable_offset = data.metadata.content_size() + data.options.content_size() +
                              data.extn.content_size() +
                              data.audio_groups
@@ -321,6 +302,11 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     try!(data.strings.write(writer, stringtable_offset));
     try!(data.textures.write(writer, ()));
     try!(data.audio.write(writer, ()));
+    // Now seek back and write the chunk size
+    let finished_offset = try!(writer.tell());
+    let size = (finished_offset - size_offset) - 4;
+    try!(writer.seek(io::SeekFrom::Start(size_offset)));
+    try!(writer.write_u32::<LittleEndian>(size as u32));
     Ok(())
 }
 
