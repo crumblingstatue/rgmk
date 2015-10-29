@@ -2,7 +2,7 @@ use std::io::prelude::*;
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Font, Fonts};
-use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec};
+use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
 
 pub struct Offset {
     pub name: u32,
@@ -16,7 +16,7 @@ impl<'a> Chunk<'a> for Fonts {
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let count = try!(reader.read_u32::<LittleEndian>());
-        let start_offset = try!(reader.seek(io::SeekFrom::Current(0))) as usize;
+        let start_offset = try!(reader.tell()) as usize;
         trace!("{} fonts", count);
         // Read offset table. Seem to be separated by 1964.
         for _ in 0..count {
@@ -41,14 +41,14 @@ impl<'a> Chunk<'a> for Fonts {
             });
             trace!("name: {} font_name: {}", name_offset, font_name_offset);
         }
-        let end_offset = try!(reader.seek(io::SeekFrom::Current(0))) as usize;
+        let end_offset = try!(reader.tell()) as usize;
         let rel_offset = end_offset - start_offset;
         trace!("Relative offset: {}", rel_offset);
         // -4 for some reason, or else I'll read past the chunk
         let need_to_read = header.size - rel_offset - 4;
         trace!("Need to read {} bytes.", need_to_read);
         let unknown_data = try!(read_into_byte_vec(reader, need_to_read));
-        let end_offset = try!(reader.seek(io::SeekFrom::Current(0))) as usize;
+        let end_offset = try!(reader.tell()) as usize;
         let rel_offset = end_offset - start_offset;
         trace!("Size: {} Offset: {}", header.size, rel_offset);
         trace!("Absolute offset: {}", end_offset);
@@ -62,7 +62,7 @@ impl<'a> Chunk<'a> for Fonts {
         try!(writer.write_all(Self::TYPE_ID));
         try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.fonts.len() as u32));
-        let write_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32;
+        let write_offset = try!(writer.tell()) as u32;
         let count = self.fonts.len() as u32;
         for i in 0..count {
             try!(writer.write_u32::<LittleEndian>(write_offset + (count * 4) + (i * 1964)));

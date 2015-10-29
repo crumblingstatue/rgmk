@@ -2,7 +2,7 @@ use std::io::prelude::*;
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Script, Scripts};
-use gamedata_io::{Chunk, get_chunk_header, ReadError};
+use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
 
 impl<'a> Chunk<'a> for Scripts {
     const TYPE_ID: &'static [u8; 4] = b"SCPT";
@@ -32,7 +32,7 @@ impl<'a> Chunk<'a> for Scripts {
         try!(writer.write_all(Self::TYPE_ID));
         try!(writer.write_u32::<LittleEndian>(self.content_size()));
         try!(writer.write_u32::<LittleEndian>(self.scripts.len() as u32));
-        let writer_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32;
+        let writer_offset = try!(writer.tell()) as u32;
         let first_script_offset = writer_offset + (self.scripts.len() as u32 * 4);
         // Write offset data
         for i in 0..self.scripts.len() as u32 {

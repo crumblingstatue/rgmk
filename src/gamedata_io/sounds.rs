@@ -2,7 +2,7 @@ use std::io::prelude::*;
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Sounds, Sound};
-use gamedata_io::{Chunk, get_chunk_header, ReadError};
+use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
 
 struct Offsets {
     pub name_offset: u32,
@@ -60,7 +60,7 @@ impl<'a> Chunk<'a> for Sounds {
         try!(writer.write_u32::<LittleEndian>(self.content_size()));
         let num_sounds = self.sounds.len() as u32;
         try!(writer.write_u32::<LittleEndian>(num_sounds));
-        let writer_offset = try!(writer.seek(io::SeekFrom::Current(0))) as u32;
+        let writer_offset = try!(writer.tell()) as u32;
         let sound_data_offset = writer_offset + (num_sounds * 4);
         for i in 0..num_sounds {
             try!(writer.write_u32::<LittleEndian>(sound_data_offset + (i * (9 * 4))));

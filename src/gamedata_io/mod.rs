@@ -21,6 +21,14 @@ mod sprites;
 
 pub use self::strings::StringReadError;
 
+trait Tell: Seek {
+    fn tell(&mut self) -> io::Result<u64> {
+        self.seek(io::SeekFrom::Current(0))
+    }
+}
+
+impl<T: Seek> Tell for T {}
+
 quick_error! {
     #[derive(Debug)]
     /// Error when reading GameData from a reader.
@@ -184,7 +192,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
             }
         }
     }
-    let textures_offset = try!(reader.seek(io::SeekFrom::Current(0))) as u32;
+    let textures_offset = try!(reader.tell()) as u32;
     let textures = try!(Textures::read(reader));
     let texture_data_offset = texture_data_offset(&textures, textures_offset);
     opts.icon_offset = opt_offsets.icon_offset - texture_data_offset;
@@ -363,7 +371,7 @@ struct ChunkHeader {
 }
 
 fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, ReadError> {
-    let offset = try!(reader.seek(io::SeekFrom::Current(0)));
+    let offset = try!(reader.tell());
     let mut type_id = [0u8; TYPE_ID_LEN];
     try!(reader.read_exact(&mut type_id));
     let size = try!(reader.read_u32::<LittleEndian>());
