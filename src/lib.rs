@@ -30,7 +30,8 @@ pub struct GameData {
     paths: Paths,
     scripts: Scripts,
     shaders: Shaders,
-    fonts: Fonts,
+    /// The fonts of the game.
+    pub fonts: Fonts,
     timelines: Timelines,
     objects: Objects,
     rooms: Rooms,
@@ -223,16 +224,21 @@ struct Shaders {
 }
 
 /// A font.
-struct Font {
-    name_index: usize,
-    font_name_index: usize,
-    point_size: u32,
+#[derive(Clone)]
+pub struct Font {
+    /// Index of the font's resource name in the string table.
+    pub name_index: usize,
+    /// Index of the font's font name in the string table.
+    pub font_name_index: usize,
+    /// Point size of the font.
+    pub point_size: u32,
     data: Vec<u8>,
 }
 
 /// A collection of fonts.
-struct Fonts {
-    fonts: Vec<Font>,
+pub struct Fonts {
+    /// The fonts.
+    pub fonts: Vec<Font>,
     unknown: Vec<u8>, // Unknown trailing data
 }
 
