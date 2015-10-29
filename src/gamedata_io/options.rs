@@ -109,12 +109,11 @@ impl<'a> Chunk<'a> for Options {
             const14_offset: const14_offset,
         }))
     }
-    fn write<W: GameDataWrite>(&self,
-                               writer: &mut W,
-                               (input, texture_data_offset): Self::WriteInput)
-                               -> io::Result<()> {
-        try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_u32::<LittleEndian>(self.content_size()));
+    chunk_write_impl!();
+    fn write_content<W: GameDataWrite>(&self,
+                                       writer: &mut W,
+                                       (input, texture_data_offset): Self::WriteInput)
+                                       -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.unk1));
         try!(writer.write_u32::<LittleEndian>(self.unk2));
         try!(writer.write_u32::<LittleEndian>(texture_data_offset + self.icon_offset));

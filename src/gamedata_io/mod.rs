@@ -7,6 +7,30 @@ use super::{GameData, MetaData, Options, Extn, Sounds, AudioGroups, Sprites, Bac
             Scripts, Shaders, Fonts, Timelines, Objects, Rooms, Dafl, Tpag, Code, Variables,
             Functions, Strings, Textures, Audio, GameDataRead, GameDataWrite};
 
+macro_rules! chunk_write_impl {
+    () => {
+        fn write<W: GameDataWrite>(&self,
+                                   writer: &mut W,
+                                   input: Self::WriteInput) -> io::Result<()> {
+            use gamedata_io::Tell;
+            try!(writer.write_all(Self::TYPE_ID));
+            let size_offset = try!(writer.tell());
+            // Skip writing the content length, we'll write it later
+            try!(writer.seek(io::SeekFrom::Current(4)));
+            // Write the content
+            try!(self.write_content(writer, input));
+            // Go back and write the content length
+            let finished_offset = try!(writer.tell());
+            let size = (finished_offset - size_offset) - 4;
+            try!(writer.seek(io::SeekFrom::Start(size_offset)));
+            try!(writer.write_u32::<LittleEndian>(size as u32));
+            // Seek back to where we came from
+            try!(writer.seek(io::SeekFrom::Start(finished_offset)));
+            Ok(())
+        }
+    }
+}
+
 mod meta_data;
 mod options;
 mod sounds;
@@ -313,10 +337,15 @@ fn string_offsets(strings: &Strings, base_offset: u32) -> Vec<u32> {
 
 trait Chunk<'a> {
     const TYPE_ID: &'static [u8; 4];
-    type ReadOutput = Self;
+    type ReadOutput;
     /// Additional inormation needed in order to be able to write correct output.
-    type WriteInput = ();
+    type WriteInput;
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
+    fn write_content<W: GameDataWrite>(&self,
+                                       writer: &mut W,
+                                       input: Self::WriteInput)
+                                       -> io::Result<()>;
+    /// Provided through chunk_write_impl! macro
     fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()>;
     fn content_size(&self) -> u32;
 }
@@ -325,18 +354,19 @@ macro_rules! unk_chunk {
     ($name:ident, $typeid:expr) => {
         impl<'a> Chunk<'a> for $name {
             const TYPE_ID: &'static [u8; 4] = $typeid;
+            type ReadOutput = Self;
+            type WriteInput = ();
             fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
                 let chunk_header = try!(get_chunk_header(reader, Self::TYPE_ID));
                 Ok($name {
                     raw: try!(read_into_byte_vec(reader, chunk_header.size))
                 })
             }
-            fn write<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
-                try!(writer.write_all(Self::TYPE_ID));
-                try!(writer.write_u32::<LittleEndian>(self.content_size()));
-                try!(writer.write_all(&self.raw));
-                Ok(())
+            fn write_content<W: GameDataWrite>(&self,
+                                               writer: &mut W, _input: ()) -> io::Result<()> {
+                writer.write_all(&self.raw)
             }
+            chunk_write_impl!();
             fn content_size(&self) -> u32 {
                 self.raw.len() as u32
             }

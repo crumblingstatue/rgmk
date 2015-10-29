@@ -27,9 +27,8 @@ impl<'a> Chunk<'a> for Strings {
         try!(reader.read_exact(&mut buf));
         Ok((Strings { strings: strings }, offsets))
     }
-    fn write<W: GameDataWrite>(&self, writer: &mut W, offset: u32) -> io::Result<()> {
-        try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_u32::<LittleEndian>(self.content_size()));
+    chunk_write_impl!();
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W, offset: u32) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
         let mut string_offset = offset + CHUNK_HEADER_LEN + 4 + (self.strings.len() as u32 * 4);
         for string in &self.strings {

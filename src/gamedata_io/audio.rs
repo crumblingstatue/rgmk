@@ -6,6 +6,8 @@ use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
 
 impl<'a> Chunk<'a> for Audio {
     const TYPE_ID: &'static [u8; 4] = b"AUDO";
+    type ReadOutput = Self;
+    type WriteInput = ();
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let num_audio = try!(reader.read_u32::<LittleEndian>());
@@ -36,9 +38,8 @@ impl<'a> Chunk<'a> for Audio {
             size: header.size as u32,
         })
     }
-    fn write<W: GameDataWrite>(&self, writer: &mut W, _: ()) -> io::Result<()> {
-        try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_u32::<LittleEndian>(self.content_size()));
+    chunk_write_impl!();
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W, _: ()) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.audio.len() as u32));
         let audio_data_offset = try!(writer.tell()) as u32 + (self.offsets.len() as u32 * 4);
         for &offset in &self.offsets {

@@ -87,9 +87,11 @@ impl<'a> Chunk<'a> for MetaData {
             window_title: window_title_offset,
         }))
     }
-    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()> {
-        try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_u32::<LittleEndian>(self.content_size()));
+    chunk_write_impl!();
+    fn write_content<W: GameDataWrite>(&self,
+                                       writer: &mut W,
+                                       input: Self::WriteInput)
+                                       -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.unk1));
         try!(writer.write_u32::<LittleEndian>(input[self.game_id_1_index]));
         try!(writer.write_u32::<LittleEndian>(input[self.default_index]));

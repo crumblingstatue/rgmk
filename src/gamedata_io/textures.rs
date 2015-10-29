@@ -8,6 +8,8 @@ const IMAGE_DATA_ALIGNMENT: u32 = 128;
 
 impl<'a> Chunk<'a> for Textures {
     const TYPE_ID: &'static [u8; 4] = b"TXTR";
+    type ReadOutput = Self;
+    type WriteInput = ();
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Textures, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let start_offset = try!(reader.tell());
@@ -42,9 +44,8 @@ impl<'a> Chunk<'a> for Textures {
             textures: textures,
         })
     }
-    fn write<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
-        try!(writer.write_all(Self::TYPE_ID));
-        try!(writer.write_u32::<LittleEndian>(self.content_size()));
+    chunk_write_impl!();
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.textures.len() as u32));
         let start_offset = try!(writer.seek(io::SeekFrom::Current(0)));
         let start_offset = try!(writer.tell());
