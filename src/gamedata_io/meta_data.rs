@@ -2,7 +2,7 @@ use std::io::prelude::*;
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, MetaData};
-use gamedata_io::{Chunk, get_chunk_header, ReadError};
+use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
 
 #[derive(Clone, Copy)]
 pub struct Offsets {
@@ -12,10 +12,26 @@ pub struct Offsets {
     pub window_title: u32,
 }
 
+pub fn write_offsets<W: GameDataWrite>(meta_data: &MetaData,
+                                       writer: &mut W,
+                                       offsets: &[u32])
+                                       -> io::Result<()> {
+    try!(writer.seek(io::SeekFrom::Current(4)));
+    trace!("Writing {} at offset {}",
+           offsets[meta_data.game_id_1_index],
+           try!(writer.tell()));
+    try!(writer.write_u32::<LittleEndian>(offsets[meta_data.game_id_1_index]));
+    try!(writer.write_u32::<LittleEndian>(offsets[meta_data.default_index]));
+    try!(writer.seek(io::SeekFrom::Current(7 * 4)));
+    try!(writer.write_u32::<LittleEndian>(offsets[meta_data.game_id_2_index]));
+    try!(writer.seek(io::SeekFrom::Current(14 * 4)));
+    try!(writer.write_u32::<LittleEndian>(offsets[meta_data.window_title_index]));
+    Ok(())
+}
+
 impl<'a> Chunk<'a> for MetaData {
     const TYPE_ID: &'static [u8; 4] = b"GEN8";
     type ReadOutput = (Self, Offsets);
-    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
@@ -88,13 +104,10 @@ impl<'a> Chunk<'a> for MetaData {
         }))
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self,
-                                       writer: &mut W,
-                                       input: Self::WriteInput)
-                                       -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.unk1));
-        try!(writer.write_u32::<LittleEndian>(input[self.game_id_1_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.default_index]));
+        // String offsets, writing later
+        try!(writer.seek(io::SeekFrom::Current(8)));
         try!(writer.write_u32::<LittleEndian>(self.unk2));
         try!(writer.write_u32::<LittleEndian>(self.unk3));
         try!(writer.write_u32::<LittleEndian>(self.unk4));
@@ -102,7 +115,8 @@ impl<'a> Chunk<'a> for MetaData {
         try!(writer.write_u32::<LittleEndian>(self.unk6));
         try!(writer.write_u32::<LittleEndian>(self.unk7));
         try!(writer.write_u32::<LittleEndian>(self.unk8));
-        try!(writer.write_u32::<LittleEndian>(input[self.game_id_2_index]));
+        // String offset, writing later
+        try!(writer.seek(io::SeekFrom::Current(4)));
         try!(writer.write_u32::<LittleEndian>(self.unk9));
         try!(writer.write_u32::<LittleEndian>(self.unk10));
         try!(writer.write_u32::<LittleEndian>(self.unk11));
@@ -117,13 +131,11 @@ impl<'a> Chunk<'a> for MetaData {
         try!(writer.write_u32::<LittleEndian>(self.unk18));
         try!(writer.write_u32::<LittleEndian>(self.unk19));
         try!(writer.write_u32::<LittleEndian>(self.unk20));
-        try!(writer.write_u32::<LittleEndian>(input[self.window_title_index]));
+        // String offset, writing later
+        try!(writer.seek(io::SeekFrom::Current(4)));
         for &v in &self.unknown {
             try!(writer.write_u32::<LittleEndian>(v));
         }
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        (self.unknown.len() as u32 * 4) + (26 * 4)
     }
 }

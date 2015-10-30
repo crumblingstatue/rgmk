@@ -7,7 +7,6 @@ use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
 impl<'a> Chunk<'a> for Textures {
     const TYPE_ID: &'static [u8; 4] = b"TXTR";
     type ReadOutput = Self;
-    type WriteInput = ();
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Textures, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let start_offset = try!(reader.tell());
@@ -38,7 +37,7 @@ impl<'a> Chunk<'a> for Textures {
         })
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.textures.len() as u32));
         let writer_offset = try!(writer.tell());
         let num_textures = self.textures.len() as u32;
@@ -56,13 +55,5 @@ impl<'a> Chunk<'a> for Textures {
         }
         try!(writer.write_all(&self.texture_data));
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        let num_textures = self.textures.len();
-        let num_textures_size = 4;
-        let texture_offsets_size = num_textures * 4;
-        let texture_entries_size = num_textures * 8;
-        (num_textures_size + texture_offsets_size + texture_entries_size +
-         self.texture_data.len()) as u32
     }
 }

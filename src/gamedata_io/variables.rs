@@ -4,10 +4,20 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Variable, Variables};
 use gamedata_io::{Chunk, get_chunk_header, ReadError};
 
+pub fn write_offsets<W: GameDataWrite>(variables: &Variables,
+                                       writer: &mut W,
+                                       string_offsets: &[u32])
+                                       -> io::Result<()> {
+    for var in &variables.variables {
+        try!(writer.write_u32::<LittleEndian>(string_offsets[var.name_index]));
+        try!(writer.seek(io::SeekFrom::Current(8)));
+    }
+    Ok(())
+}
+
 impl<'a> Chunk<'a> for Variables {
     const TYPE_ID: &'static [u8; 4] = b"VARI";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let mut offsets = Vec::new();
@@ -29,18 +39,13 @@ impl<'a> Chunk<'a> for Variables {
         Ok((Variables { variables: vars }, offsets))
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self,
-                                       writer: &mut W,
-                                       input: Self::WriteInput)
-                                       -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         for var in &self.variables {
-            try!(writer.write_u32::<LittleEndian>(input[var.name_index]));
+            // We'll write this later
+            try!(writer.seek(io::SeekFrom::Current(4)));
             try!(writer.write_u32::<LittleEndian>(var.unknown));
             try!(writer.write_u32::<LittleEndian>(var.code_offset));
         }
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        (self.variables.len() * (3 * 4)) as u32
     }
 }

@@ -4,10 +4,21 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Sprite, Sprites};
 use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
 
+pub fn write_offsets<W: GameDataWrite>(sprites: &Sprites,
+                                       writer: &mut W,
+                                       string_offsets: &[u32])
+                                       -> io::Result<()> {
+    try!(writer.seek(io::SeekFrom::Current(4 + (sprites.sprites.len() as i64 * 4))));
+    for s in &sprites.sprites {
+        try!(writer.write_u32::<LittleEndian>(string_offsets[s.name_index]));
+        try!(writer.seek(io::SeekFrom::Current((2 * 4) + (s.unknown.len() as i64))));
+    }
+    Ok(())
+}
+
 impl<'a> Chunk<'a> for Sprites {
     const TYPE_ID: &'static [u8; 4] = b"SPRT";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let count = try!(reader.read_u32::<LittleEndian>());
@@ -49,10 +60,7 @@ impl<'a> Chunk<'a> for Sprites {
         Ok((Sprites { sprites: sprites }, name_offsets))
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self,
-                                       writer: &mut W,
-                                       string_offsets: &'a [u32])
-                                       -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         let count = self.sprites.len() as u32;
         try!(writer.write_u32::<LittleEndian>(count));
         let mut offset = try!(writer.tell()) as u32 + (count * 4);
@@ -63,18 +71,12 @@ impl<'a> Chunk<'a> for Sprites {
         }
         // Write sprites
         for s in &self.sprites {
-            try!(writer.write_u32::<LittleEndian>(string_offsets[s.name_index]));
+            // We'll write this later
+            try!(writer.seek(io::SeekFrom::Current(4)));
             try!(writer.write_u32::<LittleEndian>(s.width));
             try!(writer.write_u32::<LittleEndian>(s.height));
             try!(writer.write_all(&s.unknown));
         }
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        let count = self.sprites.len() as u32;
-        let count_size = 4;
-        let offsets_size = count * 4;
-        let sprites_size = self.sprites.iter().fold(0, |a, s| a + (3 * 4) + s.unknown.len() as u32);
-        count_size + offsets_size + sprites_size
     }
 }

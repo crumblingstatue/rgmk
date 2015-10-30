@@ -9,10 +9,22 @@ pub struct Offset {
     pub font_name: u32,
 }
 
+pub fn write_offsets<W: GameDataWrite>(fonts: &Fonts,
+                                       writer: &mut W,
+                                       string_offsets: &[u32])
+                                       -> io::Result<()> {
+    try!(writer.seek(io::SeekFrom::Current(4 + fonts.fonts.len() as i64 * 4)));
+    for f in &fonts.fonts {
+        try!(writer.write_u32::<LittleEndian>(string_offsets[f.name_index]));
+        try!(writer.write_u32::<LittleEndian>(string_offsets[f.font_name_index]));
+        try!(writer.seek(io::SeekFrom::Current(4 + f.data.len() as i64)));
+    }
+    Ok(())
+}
+
 impl<'a> Chunk<'a> for Fonts {
     const TYPE_ID: &'static [u8; 4] = b"FONT";
     type ReadOutput = (Self, Vec<Offset>);
-    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
         let count = try!(reader.read_u32::<LittleEndian>());
@@ -58,10 +70,7 @@ impl<'a> Chunk<'a> for Fonts {
         },
             string_offsets))
     }
-    fn write_content<W: GameDataWrite>(&self,
-                                       writer: &mut W,
-                                       string_offsets: &'a [u32])
-                                       -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.fonts.len() as u32));
         let write_offset = try!(writer.tell()) as u32;
         let count = self.fonts.len() as u32;
@@ -69,8 +78,8 @@ impl<'a> Chunk<'a> for Fonts {
             try!(writer.write_u32::<LittleEndian>(write_offset + (count * 4) + (i * 1964)));
         }
         for f in &self.fonts {
-            try!(writer.write_u32::<LittleEndian>(string_offsets[f.name_index]));
-            try!(writer.write_u32::<LittleEndian>(string_offsets[f.font_name_index]));
+            // We'll write these later
+            try!(writer.seek(io::SeekFrom::Current(2 * 4)));
             try!(writer.write_u32::<LittleEndian>(f.point_size));
             try!(writer.write_all(&f.data));
         }
@@ -78,11 +87,4 @@ impl<'a> Chunk<'a> for Fonts {
         Ok(())
     }
     chunk_write_impl!();
-    fn content_size(&self) -> u32 {
-        let count = self.fonts.len() as u32;
-        let count_size = 4;
-        let offsets_size = count * 4;
-        let fonts_size = count * 1964;
-        count_size + offsets_size + fonts_size + self.unknown.len() as u32
-    }
 }

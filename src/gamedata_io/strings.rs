@@ -2,12 +2,11 @@ use std::io::prelude::*;
 use std::io;
 use byteorder::{self, ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Strings};
-use gamedata_io::{Chunk, get_chunk_header, ReadError, CHUNK_HEADER_LEN};
+use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
 
 impl<'a> Chunk<'a> for Strings {
     const TYPE_ID: &'static [u8; 4] = b"STRG";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = u32;
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let count = try!(reader.read_u32::<LittleEndian>());
@@ -28,9 +27,10 @@ impl<'a> Chunk<'a> for Strings {
         Ok((Strings { strings: strings }, offsets))
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self, writer: &mut W, offset: u32) -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
-        let mut string_offset = offset + CHUNK_HEADER_LEN + 4 + (self.strings.len() as u32 * 4);
+        let start_offset = try!(writer.tell());
+        let mut string_offset = start_offset as u32 + (self.strings.len() as u32 * 4);
         for string in &self.strings {
             try!(writer.write_u32::<LittleEndian>(string_offset));
             string_offset += (string.len() + 1) as u32 + 4;
@@ -43,17 +43,6 @@ impl<'a> Chunk<'a> for Strings {
         // Required padding
         try!(writer.write_all(&[0u8; 4]));
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        let mut lengths = 0;
-        for s in &self.strings {
-            // The length denominator before the string
-            lengths += 4;
-            // + 1 for null terminator
-            lengths += s.len() + 1;
-        }
-        // +4 at end for zero padding
-        (4 + (self.strings.len() * 4) + lengths + 4) as u32
     }
 }
 

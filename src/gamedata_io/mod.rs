@@ -10,22 +10,23 @@ use super::{GameData, MetaData, Options, Extn, Sounds, AudioGroups, Sprites, Bac
 macro_rules! chunk_write_impl {
     () => {
         fn write<W: GameDataWrite>(&self,
-                                   writer: &mut W,
-                                   input: Self::WriteInput) -> io::Result<()> {
+                                   writer: &mut W) -> io::Result<()> {
             use gamedata_io::Tell;
             try!(writer.write_all(Self::TYPE_ID));
             let size_offset = try!(writer.tell());
             // Skip writing the content length, we'll write it later
             try!(writer.seek(io::SeekFrom::Current(4)));
             // Write the content
-            try!(self.write_content(writer, input));
+            try!(self.write_content(writer));
             // Go back and write the content length
             let finished_offset = try!(writer.tell());
             let size = (finished_offset - size_offset) - 4;
             try!(writer.seek(io::SeekFrom::Start(size_offset)));
+            trace!("Writing chunk size: {} at offset {}", size, size_offset);
             try!(writer.write_u32::<LittleEndian>(size as u32));
             // Seek back to where we came from
             try!(writer.seek(io::SeekFrom::Start(finished_offset)));
+            trace!("Now back at offset {}", finished_offset);
             Ok(())
         }
     }
@@ -216,7 +217,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
             }
         }
     }
-    let textures_offset = try!(reader.tell()) as u32;
+    let textures_offset = try!(reader.tell()) as u32 + CHUNK_HEADER_LEN;
     let textures = try!(Textures::read(reader));
     let texture_data_offset = texture_data_offset(&textures, textures_offset);
     opts.icon_offset = opt_offsets.icon_offset - texture_data_offset;
@@ -252,58 +253,61 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     // Skip writing the chunk size, we'll go back to it later
     let size_offset = try!(writer.tell());
     try!(writer.seek(io::SeekFrom::Current(4)));
-    let stringtable_offset = data.metadata.content_size() + data.options.content_size() +
-                             data.extn.content_size() +
-                             data.audio_groups
-                                 .as_ref()
-                                 .map_or(0, |a| a.content_size() + CHUNK_HEADER_LEN) +
-                             data.sounds.content_size() +
-                             data.sprites.content_size() +
-                             data.backgrounds.content_size() +
-                             data.paths.content_size() +
-                             data.scripts.content_size() +
-                             data.shaders.content_size() +
-                             data.fonts.content_size() +
-                             data.timelines.content_size() +
-                             data.objects.content_size() +
-                             data.rooms.content_size() +
-                             data.dafl.content_size() +
-                             data.tpag.content_size() +
-                             data.code.content_size() +
-                             data.variables.content_size() +
-                             data.functions.content_size() +
-                             (CHUNK_HEADER_LEN * 19);
-    let string_offsets = string_offsets(&data.strings, stringtable_offset);
-    try!(data.metadata.write(writer, &string_offsets));
-    try!(data.options.write(writer,
-                            (&string_offsets,
-                             texture_data_offset(&data.textures,
-                                                 stringtable_offset + data.strings.content_size() +
-                                                 CHUNK_HEADER_LEN))));
-    try!(data.extn.write(writer, ()));
-    try!(data.sounds.write(writer, &string_offsets));
+    let metadata_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.metadata.write(writer));
+    let options_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.options.write(writer));
+    try!(data.extn.write(writer));
+    let sounds_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.sounds.write(writer));
     if let Some(ref agrp) = data.audio_groups {
-        try!(agrp.write(writer, ()));
+        try!(agrp.write(writer));
     }
-    try!(data.sprites.write(writer, &string_offsets));
-    try!(data.backgrounds.write(writer, ()));
-    try!(data.paths.write(writer, ()));
-    try!(data.scripts.write(writer, &string_offsets));
-    try!(data.shaders.write(writer, ()));
-    try!(data.fonts.write(writer, &string_offsets));
-    try!(data.timelines.write(writer, ()));
-    try!(data.objects.write(writer, ()));
-    try!(data.rooms.write(writer, ()));
-    try!(data.dafl.write(writer, ()));
-    try!(data.tpag.write(writer, ()));
-    try!(data.code.write(writer, ()));
-    try!(data.variables.write(writer, &string_offsets));
-    try!(data.functions.write(writer, &string_offsets));
-    try!(data.strings.write(writer, stringtable_offset));
-    try!(data.textures.write(writer, ()));
-    try!(data.audio.write(writer, ()));
-    // Now seek back and write the chunk size
+    let sprites_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.sprites.write(writer));
+    try!(data.backgrounds.write(writer));
+    try!(data.paths.write(writer));
+    let scripts_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.scripts.write(writer));
+    try!(data.shaders.write(writer));
+    let fonts_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.fonts.write(writer));
+    try!(data.timelines.write(writer));
+    try!(data.objects.write(writer));
+    try!(data.rooms.write(writer));
+    try!(data.dafl.write(writer));
+    try!(data.tpag.write(writer));
+    try!(data.code.write(writer));
+    let variables_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.variables.write(writer));
+    let functions_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    try!(data.functions.write(writer));
+    let strings_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    let string_offsets = string_offsets(&data.strings, strings_offset as u32);
+    try!(data.strings.write(writer));
+    let textures_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    let texture_data_offset = texture_data_offset(&data.textures, textures_offset as u32);
+    try!(data.textures.write(writer));
+    try!(data.audio.write(writer));
     let finished_offset = try!(writer.tell());
+    // Seek back and write offset data for chunks that need it
+    try!(writer.seek(io::SeekFrom::Start(metadata_offset)));
+    try!(meta_data::write_offsets(&data.metadata, writer, &string_offsets));
+    try!(writer.seek(io::SeekFrom::Start(options_offset)));
+    try!(options::write_offsets(&data.options, writer, texture_data_offset, &string_offsets));
+    try!(writer.seek(io::SeekFrom::Start(sounds_offset)));
+    try!(sounds::write_offsets(&data.sounds, writer, &string_offsets));
+    try!(writer.seek(io::SeekFrom::Start(sprites_offset)));
+    try!(sprites::write_offsets(&data.sprites, writer, &string_offsets));
+    try!(writer.seek(io::SeekFrom::Start(scripts_offset)));
+    try!(scripts::write_offsets(&data.scripts, writer, &string_offsets));
+    try!(writer.seek(io::SeekFrom::Start(fonts_offset)));
+    try!(fonts::write_offsets(&data.fonts, writer, &string_offsets));
+    try!(writer.seek(io::SeekFrom::Start(variables_offset)));
+    try!(variables::write_offsets(&data.variables, writer, &string_offsets));
+    try!(writer.seek(io::SeekFrom::Start(functions_offset)));
+    try!(functions::write_offsets(&data.functions, writer, &string_offsets));
+    // Now seek back and write the chunk size
     let size = (finished_offset - size_offset) - 4;
     try!(writer.seek(io::SeekFrom::Start(size_offset)));
     try!(writer.write_u32::<LittleEndian>(size as u32));
@@ -311,7 +315,7 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
 }
 
 fn string_offsets(strings: &Strings, base_offset: u32) -> Vec<u32> {
-    let mut offset = base_offset + CHUNK_HEADER_LEN + 4 + (strings.strings.len() as u32 * 4);
+    let mut offset = base_offset + 4 + (strings.strings.len() as u32 * 4);
     let mut offsets = Vec::new();
     for string in &strings.strings {
         // +4 because functions point right into the string
@@ -324,16 +328,10 @@ fn string_offsets(strings: &Strings, base_offset: u32) -> Vec<u32> {
 trait Chunk<'a> {
     const TYPE_ID: &'static [u8; 4];
     type ReadOutput;
-    /// Additional inormation needed in order to be able to write correct output.
-    type WriteInput;
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
-    fn write_content<W: GameDataWrite>(&self,
-                                       writer: &mut W,
-                                       input: Self::WriteInput)
-                                       -> io::Result<()>;
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()>;
     /// Provided through chunk_write_impl! macro
-    fn write<W: GameDataWrite>(&self, writer: &mut W, input: Self::WriteInput) -> io::Result<()>;
-    fn content_size(&self) -> u32;
+    fn write<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()>;
 }
 
 macro_rules! unk_chunk {
@@ -341,21 +339,16 @@ macro_rules! unk_chunk {
         impl<'a> Chunk<'a> for $name {
             const TYPE_ID: &'static [u8; 4] = $typeid;
             type ReadOutput = Self;
-            type WriteInput = ();
             fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
                 let chunk_header = try!(get_chunk_header(reader, Self::TYPE_ID));
                 Ok($name {
                     raw: try!(read_into_byte_vec(reader, chunk_header.size))
                 })
             }
-            fn write_content<W: GameDataWrite>(&self,
-                                               writer: &mut W, _input: ()) -> io::Result<()> {
+            fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
                 writer.write_all(&self.raw)
             }
             chunk_write_impl!();
-            fn content_size(&self) -> u32 {
-                self.raw.len() as u32
-            }
         }
     }
 }
@@ -373,7 +366,7 @@ unk_chunk!(Tpag, b"TPAG");
 unk_chunk!(Code, b"CODE");
 
 fn texture_data_offset(textures: &Textures, base_offset: u32) -> u32 {
-    let mut offset = base_offset + CHUNK_HEADER_LEN;
+    let mut offset = base_offset;
     let num_textures = textures.textures.len() as u32;
     offset += 4; // num_textures
     offset += num_textures * 4; // offset table
