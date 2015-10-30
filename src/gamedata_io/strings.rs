@@ -22,8 +22,14 @@ impl<'a> Chunk<'a> for Strings {
         }
         // TODO: Why do we need to consume additional 4 bytes?
         // Looks like 4 zero bytes.
-        let mut buf = [0u8; 4];
-        try!(reader.read_exact(&mut buf));
+        // Okay, let's assume that this is zero padding for 16 byte alignment.
+        let finished_offset = try!(reader.tell());
+        let mut offset = finished_offset;
+        // Seek to nearest 16 byte aligned offset
+        while offset % 16 != 0 {
+            offset += 1;
+        }
+        try!(reader.seek(io::SeekFrom::Start(offset)));
         Ok((Strings { strings: strings }, offsets))
     }
     chunk_write_impl!();
@@ -40,8 +46,13 @@ impl<'a> Chunk<'a> for Strings {
             try!(writer.write_all(string.as_bytes()));
             try!(writer.write_u8(0));
         }
-        // Required padding
-        try!(writer.write_all(&[0u8; 4]));
+        // Write zero padding for 16 byte alignment
+        let finished_offset = try!(writer.tell());
+        let mut offset = finished_offset;
+        while offset % 16 != 0 {
+            offset += 1;
+            try!(writer.write_u8(0));
+        }
         Ok(())
     }
 }
