@@ -1,4 +1,4 @@
-//! Reading GameData from data.win format
+//! Implementation of Reading/Writing the Game Maker Studio data format.
 
 use std::io::prelude::*;
 use std::io;
