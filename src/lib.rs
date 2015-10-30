@@ -44,7 +44,7 @@ pub struct GameData {
     functions: Functions,
     /// The strings of the game.
     pub strings: Strings,
-    textures: Textures,
+    pub textures: Textures,
     audio: Audio,
 }
 
@@ -333,7 +333,7 @@ pub struct Strings {
 /// A texture.
 pub struct Texture {
     unknown: u32, // Purpose unknown. Always seems to be 1.
-    png_data: Vec<u8>,
+    pub png_data: Vec<u8>,
 }
 
 /// A collection of textures.
