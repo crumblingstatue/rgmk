@@ -23,10 +23,34 @@ struct Offsets {
     pub const14_offset: u32,
 }
 
+pub fn write_offsets<W: GameDataWrite>(options: &Options,
+                                       writer: &mut W,
+                                       texture_data_offset: u32,
+                                       string_offsets: &[u32])
+                                       -> io::Result<()> {
+    try!(writer.seek(io::SeekFrom::Current(2 * 4)));
+    try!(writer.write_u32::<LittleEndian>(texture_data_offset + options.icon_offset));
+    try!(writer.seek(io::SeekFrom::Current(13 * 4)));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant1_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant2_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant3_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant4_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant5_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant6_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant7_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant8_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant9_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant10_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant11_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant12_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant13_name_index]));
+    try!(writer.write_u32::<LittleEndian>(string_offsets[options.constant14_name_index]));
+    Ok(())
+}
+
 impl<'a> Chunk<'a> for Options {
     const TYPE_ID: &'static [u8; 4] = b"OPTN";
     type ReadOutput = (Self, Offsets);
-    type WriteInput = (&'a [u32], u32);
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let unk1 = try!(reader.read_u32::<LittleEndian>());
@@ -110,13 +134,11 @@ impl<'a> Chunk<'a> for Options {
         }))
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self,
-                                       writer: &mut W,
-                                       (input, texture_data_offset): Self::WriteInput)
-                                       -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.unk1));
         try!(writer.write_u32::<LittleEndian>(self.unk2));
-        try!(writer.write_u32::<LittleEndian>(texture_data_offset + self.icon_offset));
+        // We'll write this later
+        try!(writer.seek(io::SeekFrom::Current(4)));
         try!(writer.write_u32::<LittleEndian>(self.unk3));
         try!(writer.write_u32::<LittleEndian>(self.unk4));
         try!(writer.write_u32::<LittleEndian>(self.unk5));
@@ -130,23 +152,8 @@ impl<'a> Chunk<'a> for Options {
         try!(writer.write_u32::<LittleEndian>(self.unk13));
         try!(writer.write_u32::<LittleEndian>(self.unk14));
         try!(writer.write_u32::<LittleEndian>(self.unk15));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant1_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant2_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant3_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant4_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant5_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant6_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant7_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant8_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant9_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant10_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant11_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant12_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant13_name_index]));
-        try!(writer.write_u32::<LittleEndian>(input[self.constant14_name_index]));
+        // We'll write these later
+        try!(writer.seek(io::SeekFrom::Current(14 * 4)));
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        30 * 4
     }
 }

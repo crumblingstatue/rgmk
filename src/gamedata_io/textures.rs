@@ -9,10 +9,8 @@ const IMAGE_DATA_ALIGNMENT: u32 = 128;
 impl<'a> Chunk<'a> for Textures {
     const TYPE_ID: &'static [u8; 4] = b"TXTR";
     type ReadOutput = Self;
-    type WriteInput = ();
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Textures, ReadError> {
-        let header = try!(get_chunk_header(reader, Self::TYPE_ID));
-        let start_offset = try!(reader.tell());
+        try!(get_chunk_header(reader, Self::TYPE_ID));
         let num_textures = try!(reader.read_u32::<LittleEndian>());
         trace!("{} textures", num_textures);
         // Read texture entry offsets
@@ -20,71 +18,77 @@ impl<'a> Chunk<'a> for Textures {
             // For now just discard them
             try!(reader.read_u32::<LittleEndian>());
         }
-        let reader_offset = try!(reader.tell()) as u32;
-        let data_offset = reader_offset + (num_textures * 8);
         let mut textures = Vec::new();
-        for _ in 0..num_textures {
+        let mut finished_offset = 0;
+        for i in 0..num_textures {
             let unk = try!(reader.read_u32::<LittleEndian>());
             let offset = try!(reader.read_u32::<LittleEndian>());
-            let reader_offset = try!(reader.seek(io::SeekFrom::Current(0)));
+            let reader_offset = try!(reader.tell());
             try!(reader.seek(io::SeekFrom::Start(offset as u64)));
             assert!(offset % IMAGE_DATA_ALIGNMENT == 0,
                     "Image data is assumed to be aligned on {} byte boundaries", IMAGE_DATA_ALIGNMENT);
+            trace!("Reading image data {} @ {}", i, offset);
             let png = try!(read_png(reader));
+            finished_offset = try!(reader.tell());
             try!(reader.seek(io::SeekFrom::Start(reader_offset)));
-            trace!("unk: {}, offset: {}", unk, offset - data_offset);
             textures.push(Texture {
                 unknown: unk,
                 png_data: png,
             });
         }
-        let rel_offset = try!(reader.tell()) - start_offset;
-        let data = try!(read_into_byte_vec(reader, header.size - rel_offset as usize));
+        // Looks like chunks don't use the same alignment as image data.
+        // Or maybe they don't use alignment at all?
+        // Why the zero padding then?
+        while finished_offset % 16 != 0 {
+            finished_offset += 1;
+        }
+        try!(reader.seek(io::SeekFrom::Start(finished_offset)));
         Ok(Textures {
             textures: textures,
         })
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self, writer: &mut W, _input: ()) -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.textures.len() as u32));
-        let start_offset = try!(writer.seek(io::SeekFrom::Current(0)));
         let start_offset = try!(writer.tell());
         let num_textures = self.textures.len() as u32;
         let offset_table_len = num_textures * 4;
         let fileinfo_table_len = num_textures * 8;
         let mut texture_data_offsets: Vec<u32> = Vec::with_capacity(num_textures as usize);
-        // Skip offset table and write image data first
+        let offset_table_offset = try!(writer.tell());
+        // Skip offset table and fileinfos and write image data first
         try!(writer.seek(io::SeekFrom::Current((offset_table_len + fileinfo_table_len) as i64)));
-        for t in &self.textures {
-            try!(writer.write_all(&t.png_data));
-            let mut offset = try!(writer.seek(io::SeekFrom::Current(0)));
+        for (i, t) in self.textures.iter().enumerate() {
+            let mut offset = try!(writer.tell());
             while offset % IMAGE_DATA_ALIGNMENT as u64 != 0 {
                 offset += 1;
             }
-            texture_data_offsets.push(offset as u32);
             try!(writer.seek(io::SeekFrom::Start(offset)));
+            trace!("Writing image data {} @ {}", i, offset);
+            try!(writer.write_all(&t.png_data));
+            texture_data_offsets.push(offset as u32);
         }
-        // Write offset table
+        let finished_offset = try!(writer.tell());
+        // Go back and write offset table
+        try!(writer.seek(io::SeekFrom::Start(offset_table_offset)));
         for i in 0..num_textures {
             try!(writer.write_u32::<LittleEndian>(start_offset as u32 + offset_table_len +
                                                   (i * 8)));
         }
-        let writer_offset = try!(writer.tell());
-        let texture_data_offset = writer_offset as u32 + (num_textures * 8);
+        // Write fileinfos
         for (t, &off) in self.textures.iter().zip(texture_data_offsets.iter()) {
             try!(writer.write_u32::<LittleEndian>(t.unknown));
             try!(writer.write_u32::<LittleEndian>(off));
         }
+        try!(writer.seek(io::SeekFrom::Start(finished_offset)));
+        trace!("Finished at {}", finished_offset);
+        let mut offset = finished_offset;
+        // Write zero padding
+        while offset % 16 != 0 {
+            offset += 1;
+            try!(writer.write_u8(0));
+        }
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        let num_textures = self.textures.len();
-        let num_textures_size = 4;
-        let texture_offsets_size = num_textures * 4;
-        let texture_entries_size = num_textures * 8;
-        //(num_textures_size + texture_offsets_size + texture_entries_size +
-        // self.texture_data.len()) as u32
-        unimplemented!()
     }
 }
 

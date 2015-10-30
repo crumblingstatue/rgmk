@@ -4,10 +4,21 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Script, Scripts};
 use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
 
+pub fn write_offsets<W: GameDataWrite>(scripts: &Scripts,
+                                       writer: &mut W,
+                                       string_offsets: &[u32])
+                                       -> io::Result<()> {
+    try!(writer.seek(io::SeekFrom::Current(4 + (scripts.scripts.len() * 4) as i64)));
+    for s in &scripts.scripts {
+        try!(writer.write_u32::<LittleEndian>(string_offsets[s.name_index]));
+        try!(writer.seek(io::SeekFrom::Current(4)));
+    }
+    Ok(())
+}
+
 impl<'a> Chunk<'a> for Scripts {
     const TYPE_ID: &'static [u8; 4] = b"SCPT";
     type ReadOutput = (Self, Vec<u32>);
-    type WriteInput = &'a [u32];
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         try!(get_chunk_header(reader, Self::TYPE_ID));
         let num_scripts = try!(reader.read_u32::<LittleEndian>());
@@ -29,10 +40,7 @@ impl<'a> Chunk<'a> for Scripts {
         Ok((Scripts { scripts: scripts }, name_offsets))
     }
     chunk_write_impl!();
-    fn write_content<W: GameDataWrite>(&self,
-                                       writer: &mut W,
-                                       input: Self::WriteInput)
-                                       -> io::Result<()> {
+    fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.scripts.len() as u32));
         let writer_offset = try!(writer.tell()) as u32;
         let first_script_offset = writer_offset + (self.scripts.len() as u32 * 4);
@@ -42,12 +50,10 @@ impl<'a> Chunk<'a> for Scripts {
         }
         // Write script data
         for s in &self.scripts {
-            try!(writer.write_u32::<LittleEndian>(input[s.name_index]));
+            // We'll write this later
+            try!(writer.seek(io::SeekFrom::Current(4)));
             try!(writer.write_u32::<LittleEndian>(s.unknown));
         }
         Ok(())
-    }
-    fn content_size(&self) -> u32 {
-        4 + (self.scripts.len() as u32 * (4 + (2 * 4)))
     }
 }
