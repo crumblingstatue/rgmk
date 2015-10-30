@@ -6,7 +6,7 @@ It was primarily designed for, and only tested on [UNDERTALE](http://undertale.c
 
 ## Usage ##
 rgmk is written in [Rust](https://www.rust-lang.org/).
-You will need to installe and download the latest **nightly** version of Rust.
+You will need to install and download the latest **nightly** version of Rust.
 
 Once you have done that, you can build rgmk with `cargo build --release`.
 
