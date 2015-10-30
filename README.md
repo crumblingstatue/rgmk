@@ -20,5 +20,5 @@ These include
 ## Library ##
 rgmk can be used as a library in your own Rust project, to build your own custom tools.
 
-Credits:
+## Credits ##
 - https://github.com/panzi/cook-serve-hoomans/blob/master/fileformat.md for lots of useful information.
