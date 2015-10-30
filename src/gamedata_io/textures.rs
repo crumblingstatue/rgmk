@@ -26,7 +26,8 @@ impl<'a> Chunk<'a> for Textures {
             let reader_offset = try!(reader.tell());
             try!(reader.seek(io::SeekFrom::Start(offset as u64)));
             assert!(offset % IMAGE_DATA_ALIGNMENT == 0,
-                    "Image data is assumed to be aligned on {} byte boundaries", IMAGE_DATA_ALIGNMENT);
+                    "Image data is assumed to be aligned on {} byte boundaries",
+                    IMAGE_DATA_ALIGNMENT);
             trace!("Reading image data {} @ {}", i, offset);
             let png = try!(read_png(reader));
             finished_offset = try!(reader.tell());
@@ -43,9 +44,7 @@ impl<'a> Chunk<'a> for Textures {
             finished_offset += 1;
         }
         try!(reader.seek(io::SeekFrom::Start(finished_offset)));
-        Ok(Textures {
-            textures: textures,
-        })
+        Ok(Textures { textures: textures })
     }
     chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
