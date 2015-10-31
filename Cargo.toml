@@ -5,7 +5,7 @@ version = "0.1.0"
 repository = "https://github.com/crumblingstatue/rgmk"
 description = "Library for manipulating Game Maker Studio's \"data.win\" (GEN8) data files."
 license = "MIT"
-keywords = ["game", "maker", "studio", "GEN8", "data.win"]
+keywords = ["game", "maker", "studio", "GEN8"]
 
 [dependencies]
 byteorder = "0.3.13"
