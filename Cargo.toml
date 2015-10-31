@@ -8,4 +8,3 @@ repository = "https://github.com/crumblingstatue/rgmk"
 byteorder = "0.3.13"
 log = { version = "0.3.3", features = ["release_max_level_info"] }
 quick-error = "0.1.4"
-env_logger = "0.3.1"
