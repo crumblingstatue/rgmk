@@ -2,6 +2,7 @@
 authors = ["Mika Attila <radiantstatue@gmail.com>"]
 name = "rgmk"
 version = "0.1.0"
+repository = "https://github.com/crumblingstatue/rgmk"
 
 [dependencies]
 byteorder = "0.3.13"
