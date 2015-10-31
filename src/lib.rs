@@ -1,12 +1,14 @@
 //! Library for manipulating Game Maker Studio's "data.win" (GEN8) data files.
 //!
-//! Typical usage consists of reading [GameData](struct.GameData.html) from a file, doing stuff with it,
+//! Typical usage consists of reading [GameData](struct.GameData.html) from a
+//! file, doing stuff with it,
 //! then writing it back to a file.
 //!
 //! Example:
 //!
 //! ```no_run
-//! let mut game_data = rgmk::GameData::from_file("data.win").expect("Failed to open data.win");
+//! let mut game_data = rgmk::GameData::from_file("data.win")
+//!                                    .expect("Failed to open data.win");
 //! game_data.strings.strings[0] = "NYEH HEH HEH!".into();
 //! game_data.save_to_file("data.win").expect("Failed to save data.win");
 //! ```

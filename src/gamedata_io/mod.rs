@@ -61,17 +61,24 @@ quick_error! {
         /// An I/O error.
         Io(err: io::Error) {
             from()
+            display("I/O error: {}", err)
         }
         /// A byte order error.
         ByteOrder(err: byteorder::Error) {
             from()
+            display("Byte order error: {}", err)
         }
         /// A string read error.
         String(err: StringReadError) {
             from()
+            display("Error when reading string: {}", err)
         }
         /// Invalid chunk type id.
-        InvalidChunkTypeId(what: [u8; 4]) { }
+        InvalidChunkTypeId(what: [u8; 4]) {
+            display("Unexpected chunk type: {} ({:?})",
+                    String::from_utf8_lossy(what),
+                    what)
+        }
     }
 }
 
