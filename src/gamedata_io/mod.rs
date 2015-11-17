@@ -43,6 +43,7 @@ mod textures;
 mod audio;
 mod fonts;
 mod sprites;
+mod code;
 
 pub use self::strings::StringReadError;
 
@@ -103,7 +104,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     let rooms = try!(Rooms::read(reader));
     let dafl = try!(Dafl::read(reader));
     let tpag = try!(Tpag::read(reader));
-    let code = try!(Code::read(reader));
+    let (mut code, code_name_offsets) = try!(Code::read(reader));
     let (mut variables, var_name_offsets) = try!(Variables::read(reader));
     let (mut functions, fun_name_offsets) = try!(Functions::read(reader));
     let (strings, offsets) = try!(Strings::read(reader));
@@ -216,6 +217,14 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
             }
         }
     }
+    for (i, off) in code_name_offsets.into_iter().enumerate() {
+        for (j, &soff) in offsets.iter().enumerate() {
+            if off - 4 == soff {
+                code.code_chunks[i].name_index = j;
+                break;
+            }
+        }
+    }
     for (i, off) in fun_name_offsets.into_iter().enumerate() {
         for (j, &soff) in offsets.iter().enumerate() {
             if off - 4 == soff {
@@ -284,6 +293,7 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     try!(data.rooms.write(writer));
     try!(data.dafl.write(writer));
     try!(data.tpag.write(writer));
+    let code_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
     try!(data.code.write(writer));
     let variables_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
     try!(data.variables.write(writer));
@@ -298,6 +308,8 @@ pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()
     try!(data.audio.write(writer));
     let finished_offset = try!(writer.tell());
     // Seek back and write offset data for chunks that need it
+    try!(writer.seek(io::SeekFrom::Start(code_offset)));
+    try!(code::write_offsets(&data.code, writer, &string_offsets));
     try!(writer.seek(io::SeekFrom::Start(metadata_offset)));
     try!(meta_data::write_offsets(&data.metadata, writer, &string_offsets));
     try!(writer.seek(io::SeekFrom::Start(options_offset)));
@@ -370,7 +382,6 @@ unk_chunk!(Objects, b"OBJT");
 unk_chunk!(Rooms, b"ROOM");
 unk_chunk!(Dafl, b"DAFL");
 unk_chunk!(Tpag, b"TPAG");
-unk_chunk!(Code, b"CODE");
 
 fn texture_data_offset(textures: &Textures, base_offset: u32) -> u32 {
     let mut offset = base_offset;

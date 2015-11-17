@@ -304,9 +304,17 @@ pub struct Tpag {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
-/// Something to do with code. Maybe code of scripts?
+/// A chunk of code
+pub struct CodeChunk {
+    /// Index of the name of the code chunk in the string table.
+    pub name_index: usize,
+    /// The raw code.
+    pub raw_code: Vec<u8>,
+}
+
+/// A collection of code chunks.
 pub struct Code {
-    raw: Vec<u8>, // Data not analyzed yet
+    code_chunks: Vec<CodeChunk>,
 }
 
 /// A game maker variable.
