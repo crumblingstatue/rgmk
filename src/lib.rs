@@ -53,7 +53,8 @@ pub struct GameData {
     rooms: Rooms,
     dafl: Dafl,
     tpag: Tpag,
-    code: Code,
+    /// The code data of the game.
+    pub code: Code,
     variables: Variables,
     functions: Functions,
     /// The strings of the game.
@@ -314,7 +315,8 @@ pub struct CodeChunk {
 
 /// A collection of code chunks.
 pub struct Code {
-    code_chunks: Vec<CodeChunk>,
+    /// The actual code chunks.
+    pub code_chunks: Vec<CodeChunk>,
 }
 
 /// A game maker variable.
