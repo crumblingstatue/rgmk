@@ -7,6 +7,10 @@ fn main() {
     let gamedata = rgmk::GameData::from_file(&path).unwrap();
     for chunk in &gamedata.code.code_chunks {
         let name = &gamedata.strings.strings[chunk.name_index][..];
-        println!("Code chunk == \"{}\" ==\n{:?}", name, chunk.raw_code);
+        println!("Code chunk == \"{}\" ==", name);
+        for b in &chunk.raw_code {
+            print!("{:02X} ", b);
+        }
+        print!("\n");
     }
 }
