@@ -58,11 +58,7 @@ impl<'a> Chunk<'a> for Strings {
 
 fn read_string<R: GameDataRead>(reader: &mut R) -> Result<String, StringReadError> {
     let len = try!(reader.read_u32::<LittleEndian>());
-    let mut buf = Vec::with_capacity(len as usize);
-    unsafe {
-        buf.set_len(len as usize);
-        try!(reader.read_exact(&mut buf));
-    }
+    let buf = try!(super::read_into_byte_vec(reader, len as usize));
     let terminator = try!(reader.read_u8());
     if terminator == 0 {
         // We assume strings are valid UTF-8, if not, panic.
