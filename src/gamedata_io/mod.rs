@@ -415,10 +415,7 @@ fn get_chunk_header<R: GameDataRead>(reader: &mut R,
 }
 
 fn read_into_byte_vec<R: GameDataRead>(reader: &mut R, len: usize) -> Result<Vec<u8>, io::Error> {
-    let mut vec = Vec::with_capacity(len);
-    unsafe {
-        vec.set_len(len);
-        try!(reader.read_exact(&mut vec));
-    }
+    let mut vec = vec![0; len];
+    try!(reader.read_exact(&mut vec));
     Ok(vec)
 }
