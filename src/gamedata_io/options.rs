@@ -133,7 +133,6 @@ impl<'a> Chunk<'a> for Options {
             const14_offset: const14_offset,
         }))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.unk1));
         try!(writer.write_u32::<LittleEndian>(self.unk2));

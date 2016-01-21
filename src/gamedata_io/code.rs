@@ -67,5 +67,4 @@ impl<'a> Chunk<'a> for Code {
                try!(writer.tell()));
         Ok(())
     }
-    chunk_write_impl!();
 }

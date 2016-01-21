@@ -39,7 +39,6 @@ impl<'a> Chunk<'a> for Scripts {
         }
         Ok((Scripts { scripts: scripts }, name_offsets))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.scripts.len() as u32));
         let writer_offset = try!(writer.tell()) as u32;

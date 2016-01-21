@@ -69,7 +69,6 @@ impl<'a> Chunk<'a> for Sounds {
         }
         Ok((Sounds { sounds: sounds }, offsets))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         let num_sounds = self.sounds.len() as u32;
         try!(writer.write_u32::<LittleEndian>(num_sounds));

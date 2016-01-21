@@ -46,7 +46,6 @@ impl<'a> Chunk<'a> for Textures {
         try!(reader.seek(io::SeekFrom::Start(finished_offset)));
         Ok(Textures { textures: textures })
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.textures.len() as u32));
         let start_offset = try!(writer.tell());

@@ -103,7 +103,6 @@ impl<'a> Chunk<'a> for MetaData {
             window_title: window_title_offset,
         }))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.unk1));
         // String offsets, writing later

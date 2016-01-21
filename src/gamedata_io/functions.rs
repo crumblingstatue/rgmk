@@ -38,7 +38,6 @@ impl<'a> Chunk<'a> for Functions {
         }
         Ok((Functions { functions: funs }, offsets))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         for fun in &self.functions {
             // We'll write this later

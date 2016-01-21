@@ -32,7 +32,6 @@ impl<'a> Chunk<'a> for Strings {
         try!(reader.seek(io::SeekFrom::Start(offset)));
         Ok((Strings { strings: strings }, offsets))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.strings.len() as u32));
         let start_offset = try!(writer.tell());

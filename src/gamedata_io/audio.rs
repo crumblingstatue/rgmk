@@ -36,7 +36,6 @@ impl<'a> Chunk<'a> for Audio {
             offsets: offsets,
         })
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         try!(writer.write_u32::<LittleEndian>(self.audio.len() as u32));
         let audio_data_offset = try!(writer.tell()) as u32 + (self.offsets.len() as u32 * 4);

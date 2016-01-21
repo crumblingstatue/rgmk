@@ -59,7 +59,6 @@ impl<'a> Chunk<'a> for Sprites {
         }
         Ok((Sprites { sprites: sprites }, name_offsets))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         let count = self.sprites.len() as u32;
         try!(writer.write_u32::<LittleEndian>(count));

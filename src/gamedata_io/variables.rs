@@ -38,7 +38,6 @@ impl<'a> Chunk<'a> for Variables {
         }
         Ok((Variables { variables: vars }, offsets))
     }
-    chunk_write_impl!();
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         for var in &self.variables {
             // We'll write this later

@@ -86,5 +86,4 @@ impl<'a> Chunk<'a> for Fonts {
         try!(writer.write_all(&self.unknown));
         Ok(())
     }
-    chunk_write_impl!();
 }

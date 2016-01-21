@@ -7,31 +7,6 @@ use super::{GameData, MetaData, Options, Extn, Sounds, AudioGroups, Sprites, Bac
             Scripts, Shaders, Fonts, Timelines, Objects, Rooms, Dafl, Tpag, Code, Variables,
             Functions, Strings, Textures, Audio, GameDataRead, GameDataWrite};
 
-macro_rules! chunk_write_impl {
-    () => {
-        fn write<W: GameDataWrite>(&self,
-                                   writer: &mut W) -> io::Result<()> {
-            use gamedata_io::Tell;
-            try!(writer.write_all(Self::TYPE_ID));
-            let size_offset = try!(writer.tell());
-            // Skip writing the content length, we'll write it later
-            try!(writer.seek(io::SeekFrom::Current(4)));
-            // Write the content
-            try!(self.write_content(writer));
-            // Go back and write the content length
-            let finished_offset = try!(writer.tell());
-            let size = (finished_offset - size_offset) - 4;
-            try!(writer.seek(io::SeekFrom::Start(size_offset)));
-            trace!("Writing chunk size: {} at offset {}", size, size_offset);
-            try!(writer.write_u32::<LittleEndian>(size as u32));
-            // Seek back to where we came from
-            try!(writer.seek(io::SeekFrom::Start(finished_offset)));
-            trace!("Now back at offset {}", finished_offset);
-            Ok(())
-        }
-    }
-}
-
 mod meta_data;
 mod options;
 mod sounds;
@@ -349,8 +324,25 @@ trait Chunk<'a> {
     type ReadOutput;
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError>;
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()>;
-    /// Provided through chunk_write_impl! macro
-    fn write<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()>;
+    fn write<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
+        use gamedata_io::Tell;
+        try!(writer.write_all(Self::TYPE_ID));
+        let size_offset = try!(writer.tell());
+        // Skip writing the content length, we'll write it later
+        try!(writer.seek(io::SeekFrom::Current(4)));
+        // Write the content
+        try!(self.write_content(writer));
+        // Go back and write the content length
+        let finished_offset = try!(writer.tell());
+        let size = (finished_offset - size_offset) - 4;
+        try!(writer.seek(io::SeekFrom::Start(size_offset)));
+        trace!("Writing chunk size: {} at offset {}", size, size_offset);
+        try!(writer.write_u32::<LittleEndian>(size as u32));
+        // Seek back to where we came from
+        try!(writer.seek(io::SeekFrom::Start(finished_offset)));
+        trace!("Now back at offset {}", finished_offset);
+        Ok(())
+    }
 }
 
 macro_rules! unk_chunk {
@@ -367,7 +359,6 @@ macro_rules! unk_chunk {
             fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
                 writer.write_all(&self.raw)
             }
-            chunk_write_impl!();
         }
     }
 }
