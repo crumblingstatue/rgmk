@@ -34,7 +34,8 @@ impl<'a> Chunk<'a> for MetaData {
     type ReadOutput = (Self, Offsets);
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
         let header = try!(get_chunk_header(reader, Self::TYPE_ID));
-        let unk1 = try!(reader.read_u32::<LittleEndian>());
+        let possibly_gen8_version = try!(reader.read_u32::<LittleEndian>());
+        info!("We are dealing with GEN8 version {}", possibly_gen8_version);
         let game_id_1_offset = try!(reader.read_u32::<LittleEndian>());
         let default_offset = try!(reader.read_u32::<LittleEndian>());
         let unk2 = try!(reader.read_u32::<LittleEndian>());
@@ -68,7 +69,7 @@ impl<'a> Chunk<'a> for MetaData {
             remaining -= 4;
         }
         Ok((MetaData {
-            unk1: unk1,
+            possibly_gen8_version: possibly_gen8_version,
             game_id_1_index: 0,
             default_index: 0,
             unk2: unk2,
@@ -104,7 +105,7 @@ impl<'a> Chunk<'a> for MetaData {
         }))
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
-        try!(writer.write_u32::<LittleEndian>(self.unk1));
+        try!(writer.write_u32::<LittleEndian>(self.possibly_gen8_version));
         // String offsets, writing later
         try!(writer.seek(io::SeekFrom::Current(8)));
         try!(writer.write_u32::<LittleEndian>(self.unk2));

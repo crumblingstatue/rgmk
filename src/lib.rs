@@ -119,7 +119,10 @@ impl GameData {
 
 /// Contains various metadata, for example, the window width/height/title.
 pub struct MetaData {
-    unk1: u32, // Purpose unknown
+    // Possibly some kind of GEN8 version number. Unsure.
+    // But let's assume, since we need to take multiple versions into consideration, and
+    // this value seems to differ for different versions.
+    possibly_gen8_version: u32,
     game_id_1_index: usize, // Some kind of game id
     default_index: usize, // Points to "Default"
     unk2: u32,
