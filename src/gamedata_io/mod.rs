@@ -389,14 +389,9 @@ struct ChunkHeader {
 }
 
 fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, ReadError> {
-    let offset = try!(reader.tell());
     let mut type_id = [0u8; TYPE_ID_LEN];
     try!(reader.read_exact(&mut type_id));
     let size = try!(reader.read_u32::<LittleEndian>());
-    info!("Read chunk {} with size {:>9} @ {:>9}",
-          String::from_utf8_lossy(&type_id),
-          size,
-          offset);
     Ok(ChunkHeader {
         type_id: type_id,
         size: size as usize,
@@ -408,6 +403,11 @@ fn get_chunk_header<R: GameDataRead>(reader: &mut R,
                                      -> Result<ChunkHeader, ReadError> {
     let header = try!(read_chunk_header(reader));
     if &header.type_id == should_be {
+        let offset = try!(reader.tell());
+        info!("Identified chunk {} with size {:>9} @ {:>9}",
+              String::from_utf8_lossy(&header.type_id),
+              header.size,
+              offset - 8);
         Ok(header)
     } else {
         Err(ReadError::InvalidChunkTypeId(header.type_id))
