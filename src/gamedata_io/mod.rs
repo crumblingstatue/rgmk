@@ -49,11 +49,13 @@ quick_error! {
             from()
             display("Error when reading string: {}", err)
         }
-        /// Invalid chunk type id.
-        InvalidChunkTypeId(what: [u8; 4]) {
-            display("Unexpected chunk type: {} ({:?})",
+        /// Expected a specific type of chunk, got something else.
+        UnexpectedChunk(what: [u8; 4], expected: &'static [u8; 4]) {
+            display("Unexpected chunk type: \"{}\" ({:?}). Expected: \"{}\" ({:?})",
                     String::from_utf8_lossy(what),
-                    what)
+                    what,
+                    String::from_utf8_lossy(*expected),
+                    expected)
         }
     }
 }
@@ -399,7 +401,7 @@ fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, Rea
 }
 
 fn get_chunk_header<R: GameDataRead>(reader: &mut R,
-                                     should_be: &[u8])
+                                     should_be: &'static [u8; 4])
                                      -> Result<ChunkHeader, ReadError> {
     let header = try!(read_chunk_header(reader));
     if &header.type_id == should_be {
@@ -410,7 +412,7 @@ fn get_chunk_header<R: GameDataRead>(reader: &mut R,
               offset - 8);
         Ok(header)
     } else {
-        Err(ReadError::InvalidChunkTypeId(header.type_id))
+        Err(ReadError::UnexpectedChunk(header.type_id, should_be))
     }
 }
 
