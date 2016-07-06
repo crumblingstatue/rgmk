@@ -1,11 +1,10 @@
-use std::io::prelude::*;
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Options};
 use gamedata_io::{Chunk, get_chunk_header, ReadError};
 
 #[derive(Clone, Copy)]
-struct Offsets {
+pub struct Offsets {
     pub icon_offset: u32,
     pub const1_offset: u32,
     pub const2_offset: u32,

@@ -1,4 +1,3 @@
-use std::io::prelude::*;
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian, BigEndian};
 use {GameDataRead, GameDataWrite, Texture, Textures};

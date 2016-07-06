@@ -1,10 +1,9 @@
-use std::io::prelude::*;
 use std::io;
 use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Sounds, Sound};
 use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
 
-struct Offsets {
+pub struct Offsets {
     pub name_offset: u32,
     pub ext_offset: u32,
     pub filename_offset: u32,
