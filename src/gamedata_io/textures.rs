@@ -1,7 +1,7 @@
 use std::io;
-use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian, BigEndian};
+use byteorder::{BigEndian, LittleEndian, ReadBytesExt, WriteBytesExt};
 use {GameDataRead, GameDataWrite, Texture, Textures};
-use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
+use gamedata_io::{Chunk, ReadError, Tell, get_chunk_header, read_into_byte_vec};
 
 const IMAGE_DATA_ALIGNMENT: u32 = 128;
 

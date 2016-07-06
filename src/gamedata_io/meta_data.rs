@@ -1,7 +1,8 @@
 use std::io;
-use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
-use {GameDataRead, GameDataWrite, MetaData};
-use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use {GameDataRead, GameDataWrite};
+use gamedata_io::{Chunk, ReadError, Tell, get_chunk_header};
+use unexposed::MetaData;
 
 #[derive(Clone, Copy)]
 pub struct Offsets {

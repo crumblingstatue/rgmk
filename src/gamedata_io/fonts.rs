@@ -1,7 +1,7 @@
 use std::io;
-use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
-use {GameDataRead, GameDataWrite, Font, Fonts};
-use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use {Font, Fonts, GameDataRead, GameDataWrite};
+use gamedata_io::{Chunk, ReadError, Tell, get_chunk_header, read_into_byte_vec};
 
 pub struct Offset {
     pub name: u32,
