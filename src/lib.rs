@@ -1,6 +1,6 @@
 //! Library for manipulating Game Maker Studio's "data.win" (GEN8) data files.
 //!
-//! Typical usage consists of reading [GameData](struct.GameData.html) from a
+//! Typical usage consists of reading [`GameData`](struct.GameData.html) from a
 //! file, doing stuff with it,
 //! then writing it back to a file.
 //!
@@ -64,10 +64,10 @@ pub struct GameData {
     audio: Audio,
 }
 
-/// A reader that satisfies the requirements for reading a GameData.
+/// A reader that satisfies the requirements for reading a `GameData`.
 pub trait GameDataRead: Read + io::Seek {}
 impl<T: Read + io::Seek> GameDataRead for T {}
-/// A writer that satisfies the requirements for writing a GameData.
+/// A writer that satisfies the requirements for writing a `GameData`.
 pub trait GameDataWrite: Write + io::Seek {}
 impl<T: Write + io::Seek> GameDataWrite for T {}
 
