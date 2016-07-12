@@ -11,10 +11,10 @@ pub struct Offsets {
     pub window_title: u32,
 }
 
-pub fn write_offsets<W: GameDataWrite>(meta_data: &MetaData,
-                                       writer: &mut W,
-                                       offsets: &[u32])
-                                       -> io::Result<()> {
+pub(crate) fn write_offsets<W: GameDataWrite>(meta_data: &MetaData,
+                                              writer: &mut W,
+                                              offsets: &[u32])
+                                              -> io::Result<()> {
     try!(writer.seek(io::SeekFrom::Current(4)));
     trace!("Writing {} at offset {}",
            offsets[meta_data.game_id_1_index],

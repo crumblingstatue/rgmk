@@ -22,11 +22,11 @@ pub struct Offsets {
     pub const14_offset: u32,
 }
 
-pub fn write_offsets<W: GameDataWrite>(options: &Options,
-                                       writer: &mut W,
-                                       texture_data_offset: u32,
-                                       string_offsets: &[u32])
-                                       -> io::Result<()> {
+pub(crate) fn write_offsets<W: GameDataWrite>(options: &Options,
+                                              writer: &mut W,
+                                              texture_data_offset: u32,
+                                              string_offsets: &[u32])
+                                              -> io::Result<()> {
     try!(writer.seek(io::SeekFrom::Current(2 * 4)));
     try!(writer.write_u32::<LittleEndian>(texture_data_offset + options.icon_offset));
     try!(writer.seek(io::SeekFrom::Current(13 * 4)));

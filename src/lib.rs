@@ -14,7 +14,7 @@
 //! ```
 //!
 
-#![feature(associated_consts)]
+#![feature(associated_consts, pub_restricted)]
 #![warn(missing_docs, trivial_casts, trivial_numeric_casts)]
 
 #[macro_use]
@@ -118,7 +118,7 @@ impl GameData {
 }
 
 /// Contains various metadata, for example, the window width/height/title.
-pub struct MetaData {
+struct MetaData {
     // Possibly some kind of GEN8 version number. Unsure.
     // But let's assume, since we need to take multiple versions into consideration, and
     // this value seems to differ for different versions.
@@ -152,7 +152,7 @@ pub struct MetaData {
 }
 
 /// Game Maker project Options
-pub struct Options {
+struct Options {
     unk1: u32, // Unknown
     unk2: u32, // Unknown
     icon_offset: u32, // Points to texture data (icon?)
@@ -186,7 +186,7 @@ pub struct Options {
 }
 
 /// Purpose unknown.
-pub struct Extn {
+struct Extn {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
@@ -214,7 +214,7 @@ pub struct Sounds {
 }
 
 /// Collection of audio groups. Not present in all games.
-pub struct AudioGroups {
+struct AudioGroups {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
@@ -237,30 +237,30 @@ pub struct Sprites {
 }
 
 /// A collection of backgrounds.
-pub struct Backgrounds {
+struct Backgrounds {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of paths.
-pub struct Paths {
+struct Paths {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A game maker script.
-pub struct Script {
+struct Script {
     /// Index of the name of the script in the string table
     pub name_index: usize,
     unknown: u32, // Unknown
 }
 
 /// A collection of scripts.
-pub struct Scripts {
+struct Scripts {
     /// The scripts.
     pub scripts: Vec<Script>,
 }
 
 /// A collection of shaders.
-pub struct Shaders {
+struct Shaders {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
@@ -284,27 +284,27 @@ pub struct Fonts {
 }
 
 /// A collection of timelines.
-pub struct Timelines {
+struct Timelines {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of objects.
-pub struct Objects {
+struct Objects {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A collection of rooms.
-pub struct Rooms {
+struct Rooms {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// Purpose unknown.
-pub struct Dafl {
+struct Dafl {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// Purpose unknown.
-pub struct Tpag {
+struct Tpag {
     raw: Vec<u8>, // Data not analyzed yet
 }
 
@@ -323,7 +323,7 @@ pub struct Code {
 }
 
 /// A game maker variable.
-pub struct Variable {
+struct Variable {
     /// Index of the name of the variable in the strings section.
     pub name_index: usize,
     unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
@@ -331,13 +331,13 @@ pub struct Variable {
 }
 
 /// A collection of variables.
-pub struct Variables {
+struct Variables {
     /// The variables.
     pub variables: Vec<Variable>,
 }
 
 /// A game maker function.
-pub struct Function {
+struct Function {
     /// Index of the name of the function in the strings section.
     pub name_index: usize,
     unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
@@ -345,7 +345,7 @@ pub struct Function {
 }
 
 /// A collection of functions.
-pub struct Functions {
+struct Functions {
     /// The functions.
     pub functions: Vec<Function>,
 }
@@ -374,12 +374,12 @@ pub struct Textures {
 }
 
 /// Raw audio data.
-pub struct AudioData {
+struct AudioData {
     data: Vec<u8>,
 }
 
 /// A collection of audio data.
-pub struct Audio {
+struct Audio {
     audio: Vec<AudioData>,
     offsets: Vec<u32>, // Audio data is not contiguous, so we need to store relative offsets
 }

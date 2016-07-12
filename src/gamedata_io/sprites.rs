@@ -3,10 +3,10 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Sprite, Sprites};
 use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
 
-pub fn write_offsets<W: GameDataWrite>(sprites: &Sprites,
-                                       writer: &mut W,
-                                       string_offsets: &[u32])
-                                       -> io::Result<()> {
+pub(crate) fn write_offsets<W: GameDataWrite>(sprites: &Sprites,
+                                              writer: &mut W,
+                                              string_offsets: &[u32])
+                                              -> io::Result<()> {
     try!(writer.seek(io::SeekFrom::Current(4 + (sprites.sprites.len() as i64 * 4))));
     for s in &sprites.sprites {
         try!(writer.write_u32::<LittleEndian>(string_offsets[s.name_index]));

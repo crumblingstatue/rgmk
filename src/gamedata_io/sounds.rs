@@ -9,10 +9,10 @@ pub struct Offsets {
     pub filename_offset: u32,
 }
 
-pub fn write_offsets<W: GameDataWrite>(sounds: &Sounds,
-                                       writer: &mut W,
-                                       string_offsets: &[u32])
-                                       -> io::Result<()> {
+pub(crate) fn write_offsets<W: GameDataWrite>(sounds: &Sounds,
+                                              writer: &mut W,
+                                              string_offsets: &[u32])
+                                              -> io::Result<()> {
     try!(writer.seek(io::SeekFrom::Current((4 + (sounds.sounds.len() * 4) as i64))));
     for s in &sounds.sounds {
         try!(writer.write_u32::<LittleEndian>(string_offsets[s.name_index]));

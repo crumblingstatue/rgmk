@@ -8,10 +8,10 @@ pub struct Offset {
     pub font_name: u32,
 }
 
-pub fn write_offsets<W: GameDataWrite>(fonts: &Fonts,
-                                       writer: &mut W,
-                                       string_offsets: &[u32])
-                                       -> io::Result<()> {
+pub(crate) fn write_offsets<W: GameDataWrite>(fonts: &Fonts,
+                                              writer: &mut W,
+                                              string_offsets: &[u32])
+                                              -> io::Result<()> {
     try!(writer.seek(io::SeekFrom::Current(4 + fonts.fonts.len() as i64 * 4)));
     for f in &fonts.fonts {
         try!(writer.write_u32::<LittleEndian>(string_offsets[f.name_index]));

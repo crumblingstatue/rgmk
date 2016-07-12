@@ -3,10 +3,10 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Function, Functions};
 use gamedata_io::{Chunk, get_chunk_header, ReadError};
 
-pub fn write_offsets<W: GameDataWrite>(funs: &Functions,
-                                       writer: &mut W,
-                                       string_offsets: &[u32])
-                                       -> io::Result<()> {
+pub(crate) fn write_offsets<W: GameDataWrite>(funs: &Functions,
+                                              writer: &mut W,
+                                              string_offsets: &[u32])
+                                              -> io::Result<()> {
     for fun in &funs.functions {
         try!(writer.write_u32::<LittleEndian>(string_offsets[fun.name_index]));
         try!(writer.seek(io::SeekFrom::Current(2 * 4)));
