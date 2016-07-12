@@ -1,10 +1,10 @@
 //! Implementation of Reading/Writing the Game Maker Studio data format.
 
 use std::io::{self, Seek};
-use byteorder::{self, LittleEndian, ReadBytesExt, WriteBytesExt};
-use super::{Fonts, GameData, GameDataRead, GameDataWrite, Sounds, Sprites, Strings, Textures};
-
-use unexposed::*;
+use byteorder::{self, ReadBytesExt, WriteBytesExt, LittleEndian};
+use super::{GameData, MetaData, Options, Extn, Sounds, AudioGroups, Sprites, Backgrounds, Paths,
+            Scripts, Shaders, Fonts, Timelines, Objects, Rooms, Dafl, Tpag, Code, Variables,
+            Functions, Strings, Textures, Audio, GameDataRead, GameDataWrite};
 
 mod meta_data;
 mod options;

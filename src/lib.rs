@@ -29,7 +29,6 @@ pub use gamedata_io::{ReadError, StringReadError};
 
 use std::io::{self, Read, Write};
 use std::path;
-use unexposed::*;
 
 /// The data of a Game Maker Studio game.
 ///
@@ -55,7 +54,7 @@ pub struct GameData {
     dafl: Dafl,
     tpag: Tpag,
     /// The code data of the game.
-    code: Code,
+    pub code: Code,
     variables: Variables,
     functions: Functions,
     /// The strings of the game.
@@ -118,185 +117,77 @@ impl GameData {
     }
 }
 
-mod unexposed {
-    /// Contains various metadata, for example, the window width/height/title.
-    pub struct MetaData {
-        // Possibly some kind of GEN8 version number. Unsure.
-        // But let's assume, since we need to take multiple versions into consideration, and
-        // this value seems to differ for different versions.
-        pub possibly_gen8_version: u32,
-        pub game_id_1_index: usize, // Some kind of game id
-        pub default_index: usize, // Points to "Default"
-        pub unk2: u32,
-        pub unk3: u32,
-        pub unk4: u32,
-        pub unk5: u32,
-        pub unk6: u32,
-        pub unk7: u32,
-        pub unk8: u32,
-        pub game_id_2_index: usize, // Some kind of game id, identical to game_id_1
-        pub unk9: u32,
-        pub unk10: u32,
-        pub unk11: u32,
-        pub unk12: u32,
-        pub window_width: u32,
-        pub window_height: u32,
-        pub unk13: u32,
-        pub unk14: u32,
-        pub unk15: u32,
-        pub unk16: u32,
-        pub unk17: u32,
-        pub unk18: u32,
-        pub unk19: u32,
-        pub unk20: u32,
-        pub window_title_index: usize,
-        pub unknown: Vec<u32>,
-    }
-    /// Game Maker project Options
-    pub struct Options {
-        pub unk1: u32, // Unknown
-        pub unk2: u32, // Unknown
-        pub icon_offset: u32, // Points to texture data (icon?)
-        pub unk3: u32,
-        pub unk4: u32,
-        pub unk5: u32,
-        pub unk6: u32,
-        pub unk7: u32,
-        pub unk8: u32,
-        pub unk9: u32,
-        pub unk10: u32,
-        pub unk11: u32,
-        pub unk12: u32,
-        pub unk13: u32,
-        pub unk14: u32,
-        pub unk15: u32,
-        pub constant1_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant2_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant3_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant4_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant5_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant6_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant7_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant8_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant9_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant10_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant11_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant12_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant13_name_index: usize, // Offset of the name of this constant in the string table
-        pub constant14_name_index: usize, // Offset of the name of this constant in the string table
-    }
+/// Contains various metadata, for example, the window width/height/title.
+pub struct MetaData {
+    // Possibly some kind of GEN8 version number. Unsure.
+    // But let's assume, since we need to take multiple versions into consideration, and
+    // this value seems to differ for different versions.
+    possibly_gen8_version: u32,
+    game_id_1_index: usize, // Some kind of game id
+    default_index: usize, // Points to "Default"
+    unk2: u32,
+    unk3: u32,
+    unk4: u32,
+    unk5: u32,
+    unk6: u32,
+    unk7: u32,
+    unk8: u32,
+    game_id_2_index: usize, // Some kind of game id, identical to game_id_1
+    unk9: u32,
+    unk10: u32,
+    unk11: u32,
+    unk12: u32,
+    window_width: u32,
+    window_height: u32,
+    unk13: u32,
+    unk14: u32,
+    unk15: u32,
+    unk16: u32,
+    unk17: u32,
+    unk18: u32,
+    unk19: u32,
+    unk20: u32,
+    window_title_index: usize,
+    unknown: Vec<u32>,
+}
 
-    /// Purpose unknown.
-    pub struct Extn {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-    /// Collection of audio groups. Not present in all games.
-    pub struct AudioGroups {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-    /// A collection of backgrounds.
-    pub struct Backgrounds {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
+/// Game Maker project Options
+pub struct Options {
+    unk1: u32, // Unknown
+    unk2: u32, // Unknown
+    icon_offset: u32, // Points to texture data (icon?)
+    unk3: u32,
+    unk4: u32,
+    unk5: u32,
+    unk6: u32,
+    unk7: u32,
+    unk8: u32,
+    unk9: u32,
+    unk10: u32,
+    unk11: u32,
+    unk12: u32,
+    unk13: u32,
+    unk14: u32,
+    unk15: u32,
+    constant1_name_index: usize, // Offset of the name of this constant in the string table
+    constant2_name_index: usize, // Offset of the name of this constant in the string table
+    constant3_name_index: usize, // Offset of the name of this constant in the string table
+    constant4_name_index: usize, // Offset of the name of this constant in the string table
+    constant5_name_index: usize, // Offset of the name of this constant in the string table
+    constant6_name_index: usize, // Offset of the name of this constant in the string table
+    constant7_name_index: usize, // Offset of the name of this constant in the string table
+    constant8_name_index: usize, // Offset of the name of this constant in the string table
+    constant9_name_index: usize, // Offset of the name of this constant in the string table
+    constant10_name_index: usize, // Offset of the name of this constant in the string table
+    constant11_name_index: usize, // Offset of the name of this constant in the string table
+    constant12_name_index: usize, // Offset of the name of this constant in the string table
+    constant13_name_index: usize, // Offset of the name of this constant in the string table
+    constant14_name_index: usize, // Offset of the name of this constant in the string table
+}
 
-    /// A collection of paths.
-    pub struct Paths {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-
-    /// A game maker script.
-    pub struct Script {
-        /// Index of the name of the script in the string table
-        pub name_index: usize,
-        pub unknown: u32, // Unknown
-    }
-
-    /// A collection of scripts.
-    pub struct Scripts {
-        /// The scripts.
-        pub scripts: Vec<Script>,
-    }
-
-    /// A collection of shaders.
-    pub struct Shaders {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-    /// A collection of timelines.
-    pub struct Timelines {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-
-    /// A collection of objects.
-    pub struct Objects {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-
-    /// A collection of rooms.
-    pub struct Rooms {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-
-    /// Purpose unknown.
-    pub struct Dafl {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-
-    /// Purpose unknown.
-    pub struct Tpag {
-        pub raw: Vec<u8>, // Data not analyzed yet
-    }
-
-    /// A chunk of code
-    pub struct CodeChunk {
-        /// Index of the name of the code chunk in the string table.
-        pub name_index: usize,
-        /// The raw code.
-        pub raw_code: Vec<u8>,
-    }
-
-    /// A collection of code chunks.
-    pub struct Code {
-        /// The actual code chunks.
-        pub code_chunks: Vec<CodeChunk>,
-    }
-
-    /// A game maker variable.
-    pub struct Variable {
-        /// Index of the name of the variable in the strings section.
-        pub name_index: usize,
-        pub unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
-        pub code_offset: u32, // Points into the code section
-    }
-
-    /// A collection of variables.
-    pub struct Variables {
-        /// The variables.
-        pub variables: Vec<Variable>,
-    }
-
-    /// A game maker function.
-    pub struct Function {
-        /// Index of the name of the function in the strings section.
-        pub name_index: usize,
-        pub unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
-        pub code_offset: u32, // Points into the code section.
-    }
-
-    /// A collection of functions.
-    pub struct Functions {
-        /// The functions.
-        pub functions: Vec<Function>,
-    }
-    /// Raw audio data.
-    pub struct AudioData {
-        pub data: Vec<u8>,
-    }
-
-    /// A collection of audio data.
-    pub struct Audio {
-        pub audio: Vec<AudioData>,
-        pub offsets: Vec<u32>, // Audio data is not contiguous, so we need to store relative offsets
-    }
+/// Purpose unknown.
+pub struct Extn {
+    raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A game maker sound.
@@ -322,6 +213,11 @@ pub struct Sounds {
     pub sounds: Vec<Sound>,
 }
 
+/// Collection of audio groups. Not present in all games.
+pub struct AudioGroups {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
 /// A game maker sprite.
 #[derive(Clone)]
 pub struct Sprite {
@@ -338,6 +234,34 @@ pub struct Sprite {
 pub struct Sprites {
     /// The sprites
     pub sprites: Vec<Sprite>,
+}
+
+/// A collection of backgrounds.
+pub struct Backgrounds {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
+/// A collection of paths.
+pub struct Paths {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
+/// A game maker script.
+pub struct Script {
+    /// Index of the name of the script in the string table
+    pub name_index: usize,
+    unknown: u32, // Unknown
+}
+
+/// A collection of scripts.
+pub struct Scripts {
+    /// The scripts.
+    pub scripts: Vec<Script>,
+}
+
+/// A collection of shaders.
+pub struct Shaders {
+    raw: Vec<u8>, // Data not analyzed yet
 }
 
 /// A font.
@@ -357,6 +281,73 @@ pub struct Fonts {
     /// The fonts.
     pub fonts: Vec<Font>,
     unknown: Vec<u8>, // Unknown trailing data
+}
+
+/// A collection of timelines.
+pub struct Timelines {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
+/// A collection of objects.
+pub struct Objects {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
+/// A collection of rooms.
+pub struct Rooms {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
+/// Purpose unknown.
+pub struct Dafl {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
+/// Purpose unknown.
+pub struct Tpag {
+    raw: Vec<u8>, // Data not analyzed yet
+}
+
+/// A chunk of code
+pub struct CodeChunk {
+    /// Index of the name of the code chunk in the string table.
+    pub name_index: usize,
+    /// The raw code.
+    pub raw_code: Vec<u8>,
+}
+
+/// A collection of code chunks.
+pub struct Code {
+    /// The actual code chunks.
+    pub code_chunks: Vec<CodeChunk>,
+}
+
+/// A game maker variable.
+pub struct Variable {
+    /// Index of the name of the variable in the strings section.
+    pub name_index: usize,
+    unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
+    code_offset: u32, // Points into the code section
+}
+
+/// A collection of variables.
+pub struct Variables {
+    /// The variables.
+    pub variables: Vec<Variable>,
+}
+
+/// A game maker function.
+pub struct Function {
+    /// Index of the name of the function in the strings section.
+    pub name_index: usize,
+    unknown: u32, // Purpose unknown. Ranges from 1 to a few thousand.
+    code_offset: u32, // Points into the code section.
+}
+
+/// A collection of functions.
+pub struct Functions {
+    /// The functions.
+    pub functions: Vec<Function>,
 }
 
 /// A collection of strings.
@@ -380,4 +371,15 @@ pub struct Texture {
 pub struct Textures {
     /// The textures.
     pub textures: Vec<Texture>,
+}
+
+/// Raw audio data.
+pub struct AudioData {
+    data: Vec<u8>,
+}
+
+/// A collection of audio data.
+pub struct Audio {
+    audio: Vec<AudioData>,
+    offsets: Vec<u32>, // Audio data is not contiguous, so we need to store relative offsets
 }

@@ -1,7 +1,7 @@
 use std::io;
-use byteorder::{self, LittleEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{self, ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Strings};
-use gamedata_io::{Chunk, ReadError, Tell, get_chunk_header};
+use gamedata_io::{Chunk, get_chunk_header, ReadError, Tell};
 
 impl<'a> Chunk<'a> for Strings {
     const TYPE_ID: &'static [u8; 4] = b"STRG";

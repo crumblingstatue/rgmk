@@ -1,8 +1,7 @@
 use std::io;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use {GameDataRead, GameDataWrite};
-use gamedata_io::{Chunk, ReadError, get_chunk_header};
-use unexposed::{Function, Functions};
+use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
+use {GameDataRead, GameDataWrite, Function, Functions};
+use gamedata_io::{Chunk, get_chunk_header, ReadError};
 
 pub fn write_offsets<W: GameDataWrite>(funs: &Functions,
                                        writer: &mut W,
