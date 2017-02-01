@@ -33,8 +33,8 @@ impl<'a> Chunk<'a> for Sprites {
         let mut sprites = Vec::with_capacity(count as usize);
         let mut sprite_offsets = sprite_offsets.into_iter().peekable();
         while let Some(reader_offset) = sprite_offsets.next() {
-            let reader_offset =
-                try!(reader.seek(io::SeekFrom::Start(reader_offset as u64))) as usize;
+            let reader_offset = try!(reader.seek(io::SeekFrom::Start(reader_offset as u64))) as
+                                usize;
             trace!("Reading sprite from offset {}", reader_offset);
             let name_offset = try!(reader.read_u32::<LittleEndian>());
             name_offsets.push(name_offset);

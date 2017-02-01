@@ -64,9 +64,9 @@ impl<'a> Chunk<'a> for Fonts {
         trace!("Size: {} Offset: {}", header.size, rel_offset);
         trace!("Absolute offset: {}", end_offset);
         Ok((Fonts {
-            fonts: fonts,
-            unknown: unknown_data,
-        },
+                fonts: fonts,
+                unknown: unknown_data,
+            },
             string_offsets))
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
