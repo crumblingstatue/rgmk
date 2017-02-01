@@ -13,13 +13,13 @@ pub(crate) fn write_offsets<W: GameDataWrite>(sounds: &Sounds,
                                               writer: &mut W,
                                               string_offsets: &[u32])
                                               -> io::Result<()> {
-    try!(writer.seek(io::SeekFrom::Current(4 + (sounds.sounds.len() * 4) as i64)));
+    writer.seek(io::SeekFrom::Current(4 + (sounds.sounds.len() * 4) as i64))?;
     for s in &sounds.sounds {
-        try!(writer.write_u32::<LittleEndian>(string_offsets[s.name_index]));
-        try!(writer.seek(io::SeekFrom::Current(4)));
-        try!(writer.write_u32::<LittleEndian>(string_offsets[s.ext_index]));
-        try!(writer.write_u32::<LittleEndian>(string_offsets[s.filename_index]));
-        try!(writer.seek(io::SeekFrom::Current(5 * 4)));
+        writer.write_u32::<LittleEndian>(string_offsets[s.name_index])?;
+        writer.seek(io::SeekFrom::Current(4))?;
+        writer.write_u32::<LittleEndian>(string_offsets[s.ext_index])?;
+        writer.write_u32::<LittleEndian>(string_offsets[s.filename_index])?;
+        writer.seek(io::SeekFrom::Current(5 * 4))?;
     }
     Ok(())
 }
@@ -28,27 +28,27 @@ impl<'a> Chunk<'a> for Sounds {
     const TYPE_ID: &'static [u8; 4] = b"SOND";
     type ReadOutput = (Self, Vec<Offsets>);
     fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
-        try!(get_chunk_header(reader, Self::TYPE_ID));
-        let num_sounds = try!(reader.read_u32::<LittleEndian>());
+        get_chunk_header(reader, Self::TYPE_ID)?;
+        let num_sounds = reader.read_u32::<LittleEndian>()?;
         trace!("{} sounds", num_sounds);
         // Read sound entry offsets
         for _ in 0..num_sounds {
             // For now just discard them
-            try!(reader.read_u32::<LittleEndian>());
+            reader.read_u32::<LittleEndian>()?;
         }
         // Read sound entries
         let mut sounds = Vec::new();
         let mut offsets = Vec::new();
         for _ in 0..num_sounds {
-            let name_offset = try!(reader.read_u32::<LittleEndian>());
-            let unk1 = try!(reader.read_u32::<LittleEndian>());
-            let ext_offset = try!(reader.read_u32::<LittleEndian>());
-            let filename_offset = try!(reader.read_u32::<LittleEndian>());
-            let unk2 = try!(reader.read_u32::<LittleEndian>());
-            let unk3 = try!(reader.read_u32::<LittleEndian>());
-            let unk4 = try!(reader.read_u32::<LittleEndian>());
-            let unk5 = try!(reader.read_u32::<LittleEndian>());
-            let unk6 = try!(reader.read_u32::<LittleEndian>());
+            let name_offset = reader.read_u32::<LittleEndian>()?;
+            let unk1 = reader.read_u32::<LittleEndian>()?;
+            let ext_offset = reader.read_u32::<LittleEndian>()?;
+            let filename_offset = reader.read_u32::<LittleEndian>()?;
+            let unk2 = reader.read_u32::<LittleEndian>()?;
+            let unk3 = reader.read_u32::<LittleEndian>()?;
+            let unk4 = reader.read_u32::<LittleEndian>()?;
+            let unk5 = reader.read_u32::<LittleEndian>()?;
+            let unk6 = reader.read_u32::<LittleEndian>()?;
             sounds.push(Sound {
                 name_index: 0,
                 unk1: unk1,
@@ -70,23 +70,23 @@ impl<'a> Chunk<'a> for Sounds {
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         let num_sounds = self.sounds.len() as u32;
-        try!(writer.write_u32::<LittleEndian>(num_sounds));
-        let writer_offset = try!(writer.tell()) as u32;
+        writer.write_u32::<LittleEndian>(num_sounds)?;
+        let writer_offset = writer.tell()? as u32;
         let sound_data_offset = writer_offset + (num_sounds * 4);
         for i in 0..num_sounds {
-            try!(writer.write_u32::<LittleEndian>(sound_data_offset + (i * (9 * 4))));
+            writer.write_u32::<LittleEndian>(sound_data_offset + (i * (9 * 4)))?;
         }
         for s in &self.sounds {
             // We'll write this later
-            try!(writer.seek(io::SeekFrom::Current(4)));
-            try!(writer.write_u32::<LittleEndian>(s.unk1));
+            writer.seek(io::SeekFrom::Current(4))?;
+            writer.write_u32::<LittleEndian>(s.unk1)?;
             // We'll write these later
-            try!(writer.seek(io::SeekFrom::Current(8)));
-            try!(writer.write_u32::<LittleEndian>(s.unk2));
-            try!(writer.write_u32::<LittleEndian>(s.unk3));
-            try!(writer.write_u32::<LittleEndian>(s.unk4));
-            try!(writer.write_u32::<LittleEndian>(s.unk5));
-            try!(writer.write_u32::<LittleEndian>(s.unk6));
+            writer.seek(io::SeekFrom::Current(8))?;
+            writer.write_u32::<LittleEndian>(s.unk2)?;
+            writer.write_u32::<LittleEndian>(s.unk3)?;
+            writer.write_u32::<LittleEndian>(s.unk4)?;
+            writer.write_u32::<LittleEndian>(s.unk5)?;
+            writer.write_u32::<LittleEndian>(s.unk6)?;
         }
         Ok(())
     }

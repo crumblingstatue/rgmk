@@ -63,27 +63,27 @@ const TYPE_ID_LEN: usize = 4;
 const CHUNK_HEADER_LEN: u32 = TYPE_ID_LEN as u32 + 4;
 
 pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
-    try!(get_chunk_header(reader, b"FORM"));
-    let (mut meta, meta_string_offsets) = try!(MetaData::read(reader));
-    let (mut opts, opt_offsets) = try!(Options::read(reader));
-    let extn = try!(Extn::read(reader));
-    let (mut sounds, sound_string_offsets) = try!(Sounds::read(reader));
-    let audio_groups = try!(AudioGroups::read(reader));
-    let (mut sprites, sprite_name_offsets) = try!(Sprites::read(reader));
-    let backgrounds = try!(Backgrounds::read(reader));
-    let paths = try!(Paths::read(reader));
-    let (mut scripts, script_name_offsets) = try!(Scripts::read(reader));
-    let shaders = try!(Shaders::read(reader));
-    let (mut fonts, font_string_offsets) = try!(Fonts::read(reader));
-    let timelines = try!(Timelines::read(reader));
-    let objects = try!(Objects::read(reader));
-    let rooms = try!(Rooms::read(reader));
-    let dafl = try!(Dafl::read(reader));
-    let tpag = try!(Tpag::read(reader));
-    let (mut code, code_name_offsets) = try!(Code::read(reader));
-    let (mut variables, var_name_offsets) = try!(Variables::read(reader));
-    let (mut functions, fun_name_offsets) = try!(Functions::read(reader));
-    let (strings, offsets) = try!(Strings::read(reader));
+    get_chunk_header(reader, b"FORM")?;
+    let (mut meta, meta_string_offsets) = MetaData::read(reader)?;
+    let (mut opts, opt_offsets) = Options::read(reader)?;
+    let extn = Extn::read(reader)?;
+    let (mut sounds, sound_string_offsets) = Sounds::read(reader)?;
+    let audio_groups = AudioGroups::read(reader)?;
+    let (mut sprites, sprite_name_offsets) = Sprites::read(reader)?;
+    let backgrounds = Backgrounds::read(reader)?;
+    let paths = Paths::read(reader)?;
+    let (mut scripts, script_name_offsets) = Scripts::read(reader)?;
+    let shaders = Shaders::read(reader)?;
+    let (mut fonts, font_string_offsets) = Fonts::read(reader)?;
+    let timelines = Timelines::read(reader)?;
+    let objects = Objects::read(reader)?;
+    let rooms = Rooms::read(reader)?;
+    let dafl = Dafl::read(reader)?;
+    let tpag = Tpag::read(reader)?;
+    let (mut code, code_name_offsets) = Code::read(reader)?;
+    let (mut variables, var_name_offsets) = Variables::read(reader)?;
+    let (mut functions, fun_name_offsets) = Functions::read(reader)?;
+    let (strings, offsets) = Strings::read(reader)?;
     for (i, &soff) in offsets.iter().enumerate() {
         if meta_string_offsets.game_id_1 - 4 == soff {
             meta.game_id_1_index = i;
@@ -209,11 +209,11 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
             }
         }
     }
-    let textures_offset = try!(reader.tell()) as u32 + CHUNK_HEADER_LEN;
-    let textures = try!(Textures::read(reader));
+    let textures_offset = reader.tell()? as u32 + CHUNK_HEADER_LEN;
+    let textures = Textures::read(reader)?;
     let texture_data_offset = texture_data_offset(&textures, textures_offset);
     opts.icon_offset = opt_offsets.icon_offset - texture_data_offset;
-    let audio = try!(Audio::read(reader));
+    let audio = Audio::read(reader)?;
     Ok(GameData {
         metadata: meta,
         options: opts,
@@ -241,71 +241,71 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
 }
 
 pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()> {
-    try!(writer.write_all(b"FORM"));
+    writer.write_all(b"FORM")?;
     // Skip writing the chunk size, we'll go back to it later
-    let size_offset = try!(writer.tell());
-    try!(writer.seek(io::SeekFrom::Current(4)));
-    let metadata_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.metadata.write(writer));
-    let options_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.options.write(writer));
-    try!(data.extn.write(writer));
-    let sounds_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.sounds.write(writer));
+    let size_offset = writer.tell()?;
+    writer.seek(io::SeekFrom::Current(4))?;
+    let metadata_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.metadata.write(writer)?;
+    let options_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.options.write(writer)?;
+    data.extn.write(writer)?;
+    let sounds_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.sounds.write(writer)?;
     if let Some(ref agrp) = data.audio_groups {
-        try!(agrp.write(writer));
+        agrp.write(writer)?;
     }
-    let sprites_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.sprites.write(writer));
-    try!(data.backgrounds.write(writer));
-    try!(data.paths.write(writer));
-    let scripts_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.scripts.write(writer));
-    try!(data.shaders.write(writer));
-    let fonts_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.fonts.write(writer));
-    try!(data.timelines.write(writer));
-    try!(data.objects.write(writer));
-    try!(data.rooms.write(writer));
-    try!(data.dafl.write(writer));
-    try!(data.tpag.write(writer));
-    let code_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.code.write(writer));
-    let variables_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.variables.write(writer));
-    let functions_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
-    try!(data.functions.write(writer));
-    let strings_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    let sprites_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.sprites.write(writer)?;
+    data.backgrounds.write(writer)?;
+    data.paths.write(writer)?;
+    let scripts_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.scripts.write(writer)?;
+    data.shaders.write(writer)?;
+    let fonts_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.fonts.write(writer)?;
+    data.timelines.write(writer)?;
+    data.objects.write(writer)?;
+    data.rooms.write(writer)?;
+    data.dafl.write(writer)?;
+    data.tpag.write(writer)?;
+    let code_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.code.write(writer)?;
+    let variables_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.variables.write(writer)?;
+    let functions_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
+    data.functions.write(writer)?;
+    let strings_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
     let string_offsets = string_offsets(&data.strings, strings_offset as u32);
-    try!(data.strings.write(writer));
-    let textures_offset = try!(writer.tell()) + CHUNK_HEADER_LEN as u64;
+    data.strings.write(writer)?;
+    let textures_offset = writer.tell()? + CHUNK_HEADER_LEN as u64;
     let texture_data_offset = texture_data_offset(&data.textures, textures_offset as u32);
-    try!(data.textures.write(writer));
-    try!(data.audio.write(writer));
-    let finished_offset = try!(writer.tell());
+    data.textures.write(writer)?;
+    data.audio.write(writer)?;
+    let finished_offset = writer.tell()?;
     // Seek back and write offset data for chunks that need it
-    try!(writer.seek(io::SeekFrom::Start(code_offset)));
-    try!(code::write_offsets(&data.code, writer, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(metadata_offset)));
-    try!(meta_data::write_offsets(&data.metadata, writer, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(options_offset)));
-    try!(options::write_offsets(&data.options, writer, texture_data_offset, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(sounds_offset)));
-    try!(sounds::write_offsets(&data.sounds, writer, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(sprites_offset)));
-    try!(sprites::write_offsets(&data.sprites, writer, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(scripts_offset)));
-    try!(scripts::write_offsets(&data.scripts, writer, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(fonts_offset)));
-    try!(fonts::write_offsets(&data.fonts, writer, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(variables_offset)));
-    try!(variables::write_offsets(&data.variables, writer, &string_offsets));
-    try!(writer.seek(io::SeekFrom::Start(functions_offset)));
-    try!(functions::write_offsets(&data.functions, writer, &string_offsets));
+    writer.seek(io::SeekFrom::Start(code_offset))?;
+    code::write_offsets(&data.code, writer, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(metadata_offset))?;
+    meta_data::write_offsets(&data.metadata, writer, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(options_offset))?;
+    options::write_offsets(&data.options, writer, texture_data_offset, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(sounds_offset))?;
+    sounds::write_offsets(&data.sounds, writer, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(sprites_offset))?;
+    sprites::write_offsets(&data.sprites, writer, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(scripts_offset))?;
+    scripts::write_offsets(&data.scripts, writer, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(fonts_offset))?;
+    fonts::write_offsets(&data.fonts, writer, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(variables_offset))?;
+    variables::write_offsets(&data.variables, writer, &string_offsets)?;
+    writer.seek(io::SeekFrom::Start(functions_offset))?;
+    functions::write_offsets(&data.functions, writer, &string_offsets)?;
     // Now seek back and write the chunk size
     let size = (finished_offset - size_offset) - 4;
-    try!(writer.seek(io::SeekFrom::Start(size_offset)));
-    try!(writer.write_u32::<LittleEndian>(size as u32));
+    writer.seek(io::SeekFrom::Start(size_offset))?;
+    writer.write_u32::<LittleEndian>(size as u32)?;
     Ok(())
 }
 
@@ -327,20 +327,20 @@ trait Chunk<'a> {
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()>;
     fn write<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         use gamedata_io::Tell;
-        try!(writer.write_all(Self::TYPE_ID));
-        let size_offset = try!(writer.tell());
+        writer.write_all(Self::TYPE_ID)?;
+        let size_offset = writer.tell()?;
         // Skip writing the content length, we'll write it later
-        try!(writer.seek(io::SeekFrom::Current(4)));
+        writer.seek(io::SeekFrom::Current(4))?;
         // Write the content
-        try!(self.write_content(writer));
+        self.write_content(writer)?;
         // Go back and write the content length
-        let finished_offset = try!(writer.tell());
+        let finished_offset = writer.tell()?;
         let size = (finished_offset - size_offset) - 4;
-        try!(writer.seek(io::SeekFrom::Start(size_offset)));
+        writer.seek(io::SeekFrom::Start(size_offset))?;
         trace!("Writing chunk size: {} at offset {}", size, size_offset);
-        try!(writer.write_u32::<LittleEndian>(size as u32));
+        writer.write_u32::<LittleEndian>(size as u32)?;
         // Seek back to where we came from
-        try!(writer.seek(io::SeekFrom::Start(finished_offset)));
+        writer.seek(io::SeekFrom::Start(finished_offset))?;
         trace!("Now back at offset {}", finished_offset);
         Ok(())
     }
@@ -391,8 +391,8 @@ struct ChunkHeader {
 
 fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, ReadError> {
     let mut type_id = [0u8; TYPE_ID_LEN];
-    try!(reader.read_exact(&mut type_id));
-    let size = try!(reader.read_u32::<LittleEndian>());
+    reader.read_exact(&mut type_id)?;
+    let size = reader.read_u32::<LittleEndian>()?;
     Ok(ChunkHeader {
         type_id: type_id,
         size: size as usize,
@@ -402,9 +402,9 @@ fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, Rea
 fn get_chunk_header<R: GameDataRead>(reader: &mut R,
                                      should_be: &'static [u8; 4])
                                      -> Result<ChunkHeader, ReadError> {
-    let header = try!(read_chunk_header(reader));
+    let header = read_chunk_header(reader)?;
     if &header.type_id == should_be {
-        let offset = try!(reader.tell());
+        let offset = reader.tell()?;
         info!("Identified chunk {} with size {:>9} @ {:>9}",
               String::from_utf8_lossy(&header.type_id),
               header.size,
@@ -417,6 +417,6 @@ fn get_chunk_header<R: GameDataRead>(reader: &mut R,
 
 fn read_into_byte_vec<R: GameDataRead>(reader: &mut R, len: usize) -> Result<Vec<u8>, io::Error> {
     let mut vec = vec![0; len];
-    try!(reader.read_exact(&mut vec));
+    reader.read_exact(&mut vec)?;
     Ok(vec)
 }

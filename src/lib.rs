@@ -80,7 +80,7 @@ impl GameData {
     pub fn from_file<P: AsRef<path::Path>>(path: P) -> Result<GameData, ReadError> {
         use std::fs::File;
         use std::io::BufReader;
-        let file = try!(File::open(path));
+        let file = File::open(path)?;
         GameData::from_reader(&mut BufReader::new(file))
     }
     /// Writes self to a writer.
@@ -91,7 +91,7 @@ impl GameData {
     pub fn save_to_file<P: AsRef<path::Path>>(&self, path: P) -> io::Result<()> {
         use std::fs::File;
         use std::io::BufWriter;
-        let file = try!(File::create(path));
+        let file = File::create(path)?;
         self.write_to_writer(&mut BufWriter::new(file))
     }
     /// Returns the window width of the game.
