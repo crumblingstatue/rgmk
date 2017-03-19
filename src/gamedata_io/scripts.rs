@@ -32,9 +32,9 @@ impl<'a> Chunk<'a> for Scripts {
         for _ in 0..num_scripts {
             name_offsets.push(reader.read_u32::<LittleEndian>()?);
             scripts.push(Script {
-                name_index: 0,
-                unknown: reader.read_u32::<LittleEndian>()?,
-            });
+                             name_index: 0,
+                             unknown: reader.read_u32::<LittleEndian>()?,
+                         });
         }
         Ok((Scripts { scripts: scripts }, name_offsets))
     }

@@ -35,9 +35,9 @@ impl<'a> Chunk<'a> for Code {
             let size = reader.read_u32::<LittleEndian>()?;
             let code_data = read_into_byte_vec(reader, size as usize)?;
             code_chunks.push(CodeChunk {
-                name_index: 0,
-                raw_code: code_data,
-            })
+                                 name_index: 0,
+                                 raw_code: code_data,
+                             })
         }
         Ok((Code { code_chunks: code_chunks }, name_offsets))
     }

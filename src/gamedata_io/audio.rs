@@ -30,9 +30,9 @@ impl<'a> Chunk<'a> for Audio {
             audio.push(AudioData { data: read_into_byte_vec(reader, size as usize)? });
         }
         Ok(Audio {
-            audio: audio,
-            offsets: offsets,
-        })
+               audio: audio,
+               offsets: offsets,
+           })
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         writer.write_u32::<LittleEndian>(self.audio.len() as u32)?;

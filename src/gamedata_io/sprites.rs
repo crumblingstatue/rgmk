@@ -49,11 +49,11 @@ impl<'a> Chunk<'a> for Sprites {
                    remaining);
             let data = read_into_byte_vec(reader, remaining)?;
             sprites.push(Sprite {
-                name_index: 0,
-                width: width,
-                height: height,
-                unknown: data,
-            });
+                             name_index: 0,
+                             width: width,
+                             height: height,
+                             unknown: data,
+                         });
         }
         Ok((Sprites { sprites: sprites }, name_offsets))
     }

@@ -32,9 +32,9 @@ impl<'a> Chunk<'a> for Textures {
             finished_offset = reader.tell()?;
             reader.seek(io::SeekFrom::Start(reader_offset))?;
             textures.push(Texture {
-                unknown: unk,
-                png_data: png,
-            });
+                              unknown: unk,
+                              png_data: png,
+                          });
         }
         // Looks like chunks don't use the same alignment as image data.
         // Or maybe they don't use alignment at all?

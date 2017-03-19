@@ -50,21 +50,21 @@ impl<'a> Chunk<'a> for Sounds {
             let unk5 = reader.read_u32::<LittleEndian>()?;
             let unk6 = reader.read_u32::<LittleEndian>()?;
             sounds.push(Sound {
-                name_index: 0,
-                unk1: unk1,
-                ext_index: 0,
-                filename_index: 0,
-                unk2: unk2,
-                unk3: unk3,
-                unk4: unk4,
-                unk5: unk5,
-                unk6: unk6,
-            });
+                            name_index: 0,
+                            unk1: unk1,
+                            ext_index: 0,
+                            filename_index: 0,
+                            unk2: unk2,
+                            unk3: unk3,
+                            unk4: unk4,
+                            unk5: unk5,
+                            unk6: unk6,
+                        });
             offsets.push(Offsets {
-                name_offset: name_offset,
-                ext_offset: ext_offset,
-                filename_offset: filename_offset,
-            });
+                             name_offset: name_offset,
+                             ext_offset: ext_offset,
+                             filename_offset: filename_offset,
+                         });
         }
         Ok((Sounds { sounds: sounds }, offsets))
     }

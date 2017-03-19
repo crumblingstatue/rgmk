@@ -39,17 +39,17 @@ impl<'a> Chunk<'a> for Fonts {
             let name_offset = reader.read_u32::<LittleEndian>()?;
             let font_name_offset = reader.read_u32::<LittleEndian>()?;
             string_offsets.push(Offset {
-                name: name_offset,
-                font_name: font_name_offset,
-            });
+                                    name: name_offset,
+                                    font_name: font_name_offset,
+                                });
             let point_size = reader.read_u32::<LittleEndian>()?;
             let data = read_into_byte_vec(reader, 1952)?;
             fonts.push(Font {
-                name_index: 0,
-                font_name_index: 0,
-                point_size: point_size,
-                data: data,
-            });
+                           name_index: 0,
+                           font_name_index: 0,
+                           point_size: point_size,
+                           data: data,
+                       });
             trace!("name: {} font_name: {}", name_offset, font_name_offset);
         }
         let end_offset = reader.tell()? as usize;

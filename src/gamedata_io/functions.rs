@@ -28,10 +28,10 @@ impl<'a> Chunk<'a> for Functions {
             let code_offset = reader.read_u32::<LittleEndian>()?;
             trace!("unk {}, code offset {}", unk, code_offset);
             funs.push(Function {
-                name_index: 0,
-                unknown: unk,
-                code_offset: code_offset,
-            });
+                          name_index: 0,
+                          unknown: unk,
+                          code_offset: code_offset,
+                      });
             offsets.push(offset);
             remaining -= 3 * 4;
         }
