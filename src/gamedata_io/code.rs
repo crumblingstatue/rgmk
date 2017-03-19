@@ -3,7 +3,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Code, CodeChunk};
 use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
 
-pub(crate) fn write_offsets<W: GameDataWrite>(code: &Code,
+pub(super) fn write_offsets<W: GameDataWrite>(code: &Code,
                                               writer: &mut W,
                                               string_offsets: &[u32])
                                               -> io::Result<()> {

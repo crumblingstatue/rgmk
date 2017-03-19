@@ -9,7 +9,7 @@ pub struct Offsets {
     pub filename_offset: u32,
 }
 
-pub(crate) fn write_offsets<W: GameDataWrite>(sounds: &Sounds,
+pub(super) fn write_offsets<W: GameDataWrite>(sounds: &Sounds,
                                               writer: &mut W,
                                               string_offsets: &[u32])
                                               -> io::Result<()> {

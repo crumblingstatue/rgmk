@@ -8,7 +8,7 @@ pub struct Offset {
     pub font_name: u32,
 }
 
-pub(crate) fn write_offsets<W: GameDataWrite>(fonts: &Fonts,
+pub(super) fn write_offsets<W: GameDataWrite>(fonts: &Fonts,
                                               writer: &mut W,
                                               string_offsets: &[u32])
                                               -> io::Result<()> {

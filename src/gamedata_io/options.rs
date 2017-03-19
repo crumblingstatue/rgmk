@@ -22,7 +22,7 @@ pub struct Offsets {
     pub const14_offset: u32,
 }
 
-pub(crate) fn write_offsets<W: GameDataWrite>(options: &Options,
+pub(super) fn write_offsets<W: GameDataWrite>(options: &Options,
                                               writer: &mut W,
                                               texture_data_offset: u32,
                                               string_offsets: &[u32])

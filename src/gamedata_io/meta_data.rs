@@ -11,7 +11,7 @@ pub struct Offsets {
     pub window_title: u32,
 }
 
-pub(crate) fn write_offsets<W: GameDataWrite>(meta_data: &MetaData,
+pub(super) fn write_offsets<W: GameDataWrite>(meta_data: &MetaData,
                                               writer: &mut W,
                                               offsets: &[u32])
                                               -> io::Result<()> {
