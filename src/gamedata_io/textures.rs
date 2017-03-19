@@ -24,9 +24,10 @@ impl<'a> Chunk<'a> for Textures {
             let offset = reader.read_u32::<LittleEndian>()?;
             let reader_offset = reader.tell()?;
             reader.seek(io::SeekFrom::Start(offset as u64))?;
-            assert!(offset % IMAGE_DATA_ALIGNMENT == 0,
-                    "Image data is assumed to be aligned on {} byte boundaries",
-                    IMAGE_DATA_ALIGNMENT);
+            assert_eq!(offset % IMAGE_DATA_ALIGNMENT,
+                       0,
+                       "Image data is assumed to be aligned on {} byte boundaries",
+                       IMAGE_DATA_ALIGNMENT);
             trace!("Reading image data {} @ {}", i, offset);
             let png = read_png(reader)?;
             finished_offset = reader.tell()?;
