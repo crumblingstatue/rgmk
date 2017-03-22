@@ -14,7 +14,7 @@
 //! ```
 //!
 
-#![feature(associated_consts, pub_restricted)]
+#![feature(associated_consts)]
 #![warn(missing_docs, trivial_casts, trivial_numeric_casts)]
 
 #[macro_use]
