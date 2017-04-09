@@ -403,7 +403,7 @@ fn get_chunk_header<R: GameDataRead>(reader: &mut R,
                                      should_be: &'static [u8; 4])
                                      -> Result<ChunkHeader, ReadError> {
     let header = read_chunk_header(reader)?;
-    if &header.type_id == should_be {
+    if header.type_id == *should_be {
         let offset = reader.tell()?;
         info!("Identified chunk {} with size {:>9} @ {:>9}",
               String::from_utf8_lossy(&header.type_id),

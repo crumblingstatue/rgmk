@@ -101,7 +101,7 @@ fn png_length<R: GameDataRead>(reader: &mut R) -> Result<u32, ReadError> {
         reader.read_exact(&mut chunk_type)?;
         let crc_len = 4;
         reader.seek(io::SeekFrom::Current(length as i64 + crc_len))?;
-        if &chunk_type == b"IEND" {
+        if chunk_type == *b"IEND" {
             break;
         }
     }
