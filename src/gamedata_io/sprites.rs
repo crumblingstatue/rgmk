@@ -41,7 +41,9 @@ impl<'a> Chunk<'a> for Sprites {
             let height = reader.read_u32::<LittleEndian>()?;
             trace!("name: {} w: {} h: {}", name_offset, width, height);
             let reader_offset = reader.tell()? as usize;
-            let next_offset = *sprite_offsets.peek().unwrap_or(&((start_offset + header.size) - 4));
+            let next_offset = *sprite_offsets
+                                   .peek()
+                                   .unwrap_or(&((start_offset + header.size) - 4));
             let remaining = next_offset - reader_offset;
             trace!("At {}, Next offset is {}, reading remaining {} bytes",
                    reader_offset,
