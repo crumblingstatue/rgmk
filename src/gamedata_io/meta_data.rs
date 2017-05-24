@@ -11,20 +11,27 @@ pub struct Offsets {
     pub window_title: u32,
 }
 
-pub(super) fn write_offsets<W: GameDataWrite>(meta_data: &MetaData,
-                                              writer: &mut W,
-                                              offsets: &[u32])
-                                              -> io::Result<()> {
+pub(super) fn write_offsets<W: GameDataWrite>(
+    meta_data: &MetaData,
+    writer: &mut W,
+    offsets: &[u32],
+) -> io::Result<()> {
     writer.seek(io::SeekFrom::Current(4))?;
-    trace!("Writing {} at offset {}",
-           offsets[meta_data.game_id_1_index],
-           writer.tell()?);
-    writer.write_u32::<LittleEndian>(offsets[meta_data.game_id_1_index])?;
-    writer.write_u32::<LittleEndian>(offsets[meta_data.default_index])?;
+    trace!(
+        "Writing {} at offset {}",
+        offsets[meta_data.game_id_1_index],
+        writer.tell()?
+    );
+    writer
+        .write_u32::<LittleEndian>(offsets[meta_data.game_id_1_index])?;
+    writer
+        .write_u32::<LittleEndian>(offsets[meta_data.default_index])?;
     writer.seek(io::SeekFrom::Current(7 * 4))?;
-    writer.write_u32::<LittleEndian>(offsets[meta_data.game_id_2_index])?;
+    writer
+        .write_u32::<LittleEndian>(offsets[meta_data.game_id_2_index])?;
     writer.seek(io::SeekFrom::Current(14 * 4))?;
-    writer.write_u32::<LittleEndian>(offsets[meta_data.window_title_index])?;
+    writer
+        .write_u32::<LittleEndian>(offsets[meta_data.window_title_index])?;
     Ok(())
 }
 
@@ -67,7 +74,8 @@ impl<'a> Chunk<'a> for MetaData {
             values.push(value);
             remaining -= 4;
         }
-        Ok((MetaData {
+        Ok((
+            MetaData {
                 possibly_gen8_version: possibly_gen8_version,
                 game_id_1_index: 0,
                 default_index: 0,
@@ -101,10 +109,12 @@ impl<'a> Chunk<'a> for MetaData {
                 default: default_offset,
                 game_id_2: game_id_2_offset,
                 window_title: window_title_offset,
-            }))
+            },
+        ))
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
-        writer.write_u32::<LittleEndian>(self.possibly_gen8_version)?;
+        writer
+            .write_u32::<LittleEndian>(self.possibly_gen8_version)?;
         // String offsets, writing later
         writer.seek(io::SeekFrom::Current(8))?;
         writer.write_u32::<LittleEndian>(self.unk2)?;

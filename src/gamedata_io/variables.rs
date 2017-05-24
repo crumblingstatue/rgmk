@@ -3,12 +3,14 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Variable, Variables};
 use gamedata_io::{Chunk, get_chunk_header, ReadError};
 
-pub(super) fn write_offsets<W: GameDataWrite>(variables: &Variables,
-                                              writer: &mut W,
-                                              string_offsets: &[u32])
-                                              -> io::Result<()> {
+pub(super) fn write_offsets<W: GameDataWrite>(
+    variables: &Variables,
+    writer: &mut W,
+    string_offsets: &[u32],
+) -> io::Result<()> {
     for var in &variables.variables {
-        writer.write_u32::<LittleEndian>(string_offsets[var.name_index])?;
+        writer
+            .write_u32::<LittleEndian>(string_offsets[var.name_index])?;
         writer.seek(io::SeekFrom::Current(8))?;
     }
     Ok(())
@@ -28,10 +30,10 @@ impl<'a> Chunk<'a> for Variables {
             let code_offset = reader.read_u32::<LittleEndian>()?;
             trace!("unk {} code_offset {}", unk, code_offset);
             vars.push(Variable {
-                          name_index: 0,
-                          unknown: unk,
-                          code_offset: code_offset,
-                      });
+                name_index: 0,
+                unknown: unk,
+                code_offset: code_offset,
+            });
             offsets.push(offset);
             remaining -= 3 * 4;
         }

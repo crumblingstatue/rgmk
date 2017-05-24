@@ -8,14 +8,18 @@ pub struct Offset {
     pub font_name: u32,
 }
 
-pub(super) fn write_offsets<W: GameDataWrite>(fonts: &Fonts,
-                                              writer: &mut W,
-                                              string_offsets: &[u32])
-                                              -> io::Result<()> {
-    writer.seek(io::SeekFrom::Current(4 + fonts.fonts.len() as i64 * 4))?;
+pub(super) fn write_offsets<W: GameDataWrite>(
+    fonts: &Fonts,
+    writer: &mut W,
+    string_offsets: &[u32],
+) -> io::Result<()> {
+    writer
+        .seek(io::SeekFrom::Current(4 + fonts.fonts.len() as i64 * 4))?;
     for f in &fonts.fonts {
-        writer.write_u32::<LittleEndian>(string_offsets[f.name_index])?;
-        writer.write_u32::<LittleEndian>(string_offsets[f.font_name_index])?;
+        writer
+            .write_u32::<LittleEndian>(string_offsets[f.name_index])?;
+        writer
+            .write_u32::<LittleEndian>(string_offsets[f.font_name_index])?;
         writer.seek(io::SeekFrom::Current(4 + f.data.len() as i64))?;
     }
     Ok(())
@@ -39,17 +43,17 @@ impl<'a> Chunk<'a> for Fonts {
             let name_offset = reader.read_u32::<LittleEndian>()?;
             let font_name_offset = reader.read_u32::<LittleEndian>()?;
             string_offsets.push(Offset {
-                                    name: name_offset,
-                                    font_name: font_name_offset,
-                                });
+                name: name_offset,
+                font_name: font_name_offset,
+            });
             let point_size = reader.read_u32::<LittleEndian>()?;
             let data = read_into_byte_vec(reader, 1952)?;
             fonts.push(Font {
-                           name_index: 0,
-                           font_name_index: 0,
-                           point_size: point_size,
-                           data: data,
-                       });
+                name_index: 0,
+                font_name_index: 0,
+                point_size: point_size,
+                data: data,
+            });
             trace!("name: {} font_name: {}", name_offset, font_name_offset);
         }
         let end_offset = reader.tell()? as usize;
@@ -63,18 +67,21 @@ impl<'a> Chunk<'a> for Fonts {
         let rel_offset = end_offset - start_offset;
         trace!("Size: {} Offset: {}", header.size, rel_offset);
         trace!("Absolute offset: {}", end_offset);
-        Ok((Fonts {
+        Ok((
+            Fonts {
                 fonts: fonts,
                 unknown: unknown_data,
             },
-            string_offsets))
+            string_offsets,
+        ))
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         writer.write_u32::<LittleEndian>(self.fonts.len() as u32)?;
         let write_offset = writer.tell()? as u32;
         let count = self.fonts.len() as u32;
         for i in 0..count {
-            writer.write_u32::<LittleEndian>(write_offset + (count * 4) + (i * 1964))?;
+            writer
+                .write_u32::<LittleEndian>(write_offset + (count * 4) + (i * 1964))?;
         }
         for f in &self.fonts {
             // We'll write these later

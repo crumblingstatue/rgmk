@@ -21,28 +21,35 @@ impl<'a> Chunk<'a> for Audio {
         let mut audio = Vec::new();
 
         for (i, &offset) in offsets.iter().enumerate() {
-            let offset = reader.seek(io::SeekFrom::Start((audio_data_offset + offset) as u64))?;
+            let offset = reader
+                .seek(io::SeekFrom::Start((audio_data_offset + offset) as u64))?;
             let size = reader.read_u32::<LittleEndian>()?;
-            trace!("({}) @offset {} Reading audio file of size {}",
-                   i,
-                   offset,
-                   size);
-            audio.push(AudioData { data: read_into_byte_vec(reader, size as usize)? });
+            trace!(
+                "({}) @offset {} Reading audio file of size {}",
+                i,
+                offset,
+                size
+            );
+            audio.push(AudioData {
+                data: read_into_byte_vec(reader, size as usize)?,
+            });
         }
         Ok(Audio {
-               audio: audio,
-               offsets: offsets,
-           })
+            audio: audio,
+            offsets: offsets,
+        })
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         writer.write_u32::<LittleEndian>(self.audio.len() as u32)?;
         let audio_data_offset = writer.tell()? as u32 + (self.offsets.len() as u32 * 4);
         for &offset in &self.offsets {
             trace!("Writing offset {} ", audio_data_offset + offset);
-            writer.write_u32::<LittleEndian>(audio_data_offset + offset)?;
+            writer
+                .write_u32::<LittleEndian>(audio_data_offset + offset)?;
         }
         for (&offset, data) in self.offsets.iter().zip(self.audio.iter()) {
-            writer.seek(io::SeekFrom::Start((audio_data_offset + offset) as u64))?;
+            writer
+                .seek(io::SeekFrom::Start((audio_data_offset + offset) as u64))?;
             writer.write_u32::<LittleEndian>(data.data.len() as u32)?;
             writer.write_all(&data.data)?;
         }

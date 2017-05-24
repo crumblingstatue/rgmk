@@ -24,18 +24,20 @@ impl<'a> Chunk<'a> for Textures {
             let offset = reader.read_u32::<LittleEndian>()?;
             let reader_offset = reader.tell()?;
             reader.seek(io::SeekFrom::Start(offset as u64))?;
-            assert_eq!(offset % IMAGE_DATA_ALIGNMENT,
-                       0,
-                       "Image data is assumed to be aligned on {} byte boundaries",
-                       IMAGE_DATA_ALIGNMENT);
+            assert_eq!(
+                offset % IMAGE_DATA_ALIGNMENT,
+                0,
+                "Image data is assumed to be aligned on {} byte boundaries",
+                IMAGE_DATA_ALIGNMENT
+            );
             trace!("Reading image data {} @ {}", i, offset);
             let png = read_png(reader)?;
             finished_offset = reader.tell()?;
             reader.seek(io::SeekFrom::Start(reader_offset))?;
             textures.push(Texture {
-                              unknown: unk,
-                              png_data: png,
-                          });
+                unknown: unk,
+                png_data: png,
+            });
         }
         // Looks like chunks don't use the same alignment as image data.
         // Or maybe they don't use alignment at all?
@@ -47,7 +49,8 @@ impl<'a> Chunk<'a> for Textures {
         Ok(Textures { textures: textures })
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
-        writer.write_u32::<LittleEndian>(self.textures.len() as u32)?;
+        writer
+            .write_u32::<LittleEndian>(self.textures.len() as u32)?;
         let start_offset = writer.tell()?;
         let num_textures = self.textures.len() as u32;
         let offset_table_len = num_textures * 4;
@@ -55,7 +58,10 @@ impl<'a> Chunk<'a> for Textures {
         let mut texture_data_offsets: Vec<u32> = Vec::with_capacity(num_textures as usize);
         let offset_table_offset = writer.tell()?;
         // Skip offset table and fileinfos and write image data first
-        writer.seek(io::SeekFrom::Current((offset_table_len + fileinfo_table_len) as i64))?;
+        writer
+            .seek(io::SeekFrom::Current(
+                (offset_table_len + fileinfo_table_len) as i64,
+            ))?;
         for (i, t) in self.textures.iter().enumerate() {
             let mut offset = writer.tell()?;
             while offset % IMAGE_DATA_ALIGNMENT as u64 != 0 {
@@ -70,7 +76,8 @@ impl<'a> Chunk<'a> for Textures {
         // Go back and write offset table
         writer.seek(io::SeekFrom::Start(offset_table_offset))?;
         for i in 0..num_textures {
-            writer.write_u32::<LittleEndian>(start_offset as u32 + offset_table_len + (i * 8))?;
+            writer
+                .write_u32::<LittleEndian>(start_offset as u32 + offset_table_len + (i * 8))?;
         }
         // Write fileinfos
         for (t, &off) in self.textures.iter().zip(texture_data_offsets.iter()) {

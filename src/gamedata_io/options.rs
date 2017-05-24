@@ -22,28 +22,44 @@ pub struct Offsets {
     pub const14_offset: u32,
 }
 
-pub(super) fn write_offsets<W: GameDataWrite>(options: &Options,
-                                              writer: &mut W,
-                                              texture_data_offset: u32,
-                                              string_offsets: &[u32])
-                                              -> io::Result<()> {
+pub(super) fn write_offsets<W: GameDataWrite>(
+    options: &Options,
+    writer: &mut W,
+    texture_data_offset: u32,
+    string_offsets: &[u32],
+) -> io::Result<()> {
     writer.seek(io::SeekFrom::Current(2 * 4))?;
-    writer.write_u32::<LittleEndian>(texture_data_offset + options.icon_offset)?;
+    writer
+        .write_u32::<LittleEndian>(texture_data_offset + options.icon_offset)?;
     writer.seek(io::SeekFrom::Current(13 * 4))?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant1_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant2_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant3_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant4_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant5_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant6_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant7_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant8_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant9_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant10_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant11_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant12_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant13_name_index])?;
-    writer.write_u32::<LittleEndian>(string_offsets[options.constant14_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant1_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant2_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant3_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant4_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant5_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant6_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant7_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant8_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant9_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant10_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant11_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant12_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant13_name_index])?;
+    writer
+        .write_u32::<LittleEndian>(string_offsets[options.constant14_name_index])?;
     Ok(())
 }
 
@@ -82,7 +98,8 @@ impl<'a> Chunk<'a> for Options {
         let const12_offset = reader.read_u32::<LittleEndian>()?;
         let const13_offset = reader.read_u32::<LittleEndian>()?;
         let const14_offset = reader.read_u32::<LittleEndian>()?;
-        Ok((Options {
+        Ok((
+            Options {
                 unk1: unk1,
                 unk2: unk2,
                 icon_offset: 0,
@@ -130,7 +147,8 @@ impl<'a> Chunk<'a> for Options {
                 const12_offset: const12_offset,
                 const13_offset: const13_offset,
                 const14_offset: const14_offset,
-            }))
+            },
+        ))
     }
     fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
         writer.write_u32::<LittleEndian>(self.unk1)?;

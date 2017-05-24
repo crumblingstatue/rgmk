@@ -215,29 +215,29 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<GameData, ReadError> {
     opts.icon_offset = opt_offsets.icon_offset - texture_data_offset;
     let audio = Audio::read(reader)?;
     Ok(GameData {
-           metadata: meta,
-           options: opts,
-           extn: extn,
-           sounds: sounds,
-           audio_groups: Some(audio_groups),
-           sprites: sprites,
-           backgrounds: backgrounds,
-           paths: paths,
-           scripts: scripts,
-           shaders: shaders,
-           fonts: fonts,
-           timelines: timelines,
-           objects: objects,
-           rooms: rooms,
-           dafl: dafl,
-           tpag: tpag,
-           code: code,
-           variables: variables,
-           functions: functions,
-           strings: strings,
-           textures: textures,
-           audio: audio,
-       })
+        metadata: meta,
+        options: opts,
+        extn: extn,
+        sounds: sounds,
+        audio_groups: Some(audio_groups),
+        sprites: sprites,
+        backgrounds: backgrounds,
+        paths: paths,
+        scripts: scripts,
+        shaders: shaders,
+        fonts: fonts,
+        timelines: timelines,
+        objects: objects,
+        rooms: rooms,
+        dafl: dafl,
+        tpag: tpag,
+        code: code,
+        variables: variables,
+        functions: functions,
+        strings: strings,
+        textures: textures,
+        audio: audio,
+    })
 }
 
 pub fn write<W: GameDataWrite>(data: &GameData, writer: &mut W) -> io::Result<()> {
@@ -394,21 +394,24 @@ fn read_chunk_header<R: GameDataRead>(reader: &mut R) -> Result<ChunkHeader, Rea
     reader.read_exact(&mut type_id)?;
     let size = reader.read_u32::<LittleEndian>()?;
     Ok(ChunkHeader {
-           type_id: type_id,
-           size: size as usize,
-       })
+        type_id: type_id,
+        size: size as usize,
+    })
 }
 
-fn get_chunk_header<R: GameDataRead>(reader: &mut R,
-                                     should_be: &'static [u8; 4])
-                                     -> Result<ChunkHeader, ReadError> {
+fn get_chunk_header<R: GameDataRead>(
+    reader: &mut R,
+    should_be: &'static [u8; 4],
+) -> Result<ChunkHeader, ReadError> {
     let header = read_chunk_header(reader)?;
     if header.type_id == *should_be {
         let offset = reader.tell()?;
-        info!("Identified chunk {} with size {:>9} @ {:>9}",
-              String::from_utf8_lossy(&header.type_id),
-              header.size,
-              offset - 8);
+        info!(
+            "Identified chunk {} with size {:>9} @ {:>9}",
+            String::from_utf8_lossy(&header.type_id),
+            header.size,
+            offset - 8
+        );
         Ok(header)
     } else {
         Err(ReadError::UnexpectedChunk(header.type_id, should_be))

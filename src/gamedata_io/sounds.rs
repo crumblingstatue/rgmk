@@ -9,16 +9,21 @@ pub struct Offsets {
     pub filename_offset: u32,
 }
 
-pub(super) fn write_offsets<W: GameDataWrite>(sounds: &Sounds,
-                                              writer: &mut W,
-                                              string_offsets: &[u32])
-                                              -> io::Result<()> {
-    writer.seek(io::SeekFrom::Current(4 + (sounds.sounds.len() * 4) as i64))?;
+pub(super) fn write_offsets<W: GameDataWrite>(
+    sounds: &Sounds,
+    writer: &mut W,
+    string_offsets: &[u32],
+) -> io::Result<()> {
+    writer
+        .seek(io::SeekFrom::Current(4 + (sounds.sounds.len() * 4) as i64))?;
     for s in &sounds.sounds {
-        writer.write_u32::<LittleEndian>(string_offsets[s.name_index])?;
+        writer
+            .write_u32::<LittleEndian>(string_offsets[s.name_index])?;
         writer.seek(io::SeekFrom::Current(4))?;
-        writer.write_u32::<LittleEndian>(string_offsets[s.ext_index])?;
-        writer.write_u32::<LittleEndian>(string_offsets[s.filename_index])?;
+        writer
+            .write_u32::<LittleEndian>(string_offsets[s.ext_index])?;
+        writer
+            .write_u32::<LittleEndian>(string_offsets[s.filename_index])?;
         writer.seek(io::SeekFrom::Current(5 * 4))?;
     }
     Ok(())
@@ -50,21 +55,21 @@ impl<'a> Chunk<'a> for Sounds {
             let unk5 = reader.read_u32::<LittleEndian>()?;
             let unk6 = reader.read_u32::<LittleEndian>()?;
             sounds.push(Sound {
-                            name_index: 0,
-                            unk1: unk1,
-                            ext_index: 0,
-                            filename_index: 0,
-                            unk2: unk2,
-                            unk3: unk3,
-                            unk4: unk4,
-                            unk5: unk5,
-                            unk6: unk6,
-                        });
+                name_index: 0,
+                unk1: unk1,
+                ext_index: 0,
+                filename_index: 0,
+                unk2: unk2,
+                unk3: unk3,
+                unk4: unk4,
+                unk5: unk5,
+                unk6: unk6,
+            });
             offsets.push(Offsets {
-                             name_offset: name_offset,
-                             ext_offset: ext_offset,
-                             filename_offset: filename_offset,
-                         });
+                name_offset: name_offset,
+                ext_offset: ext_offset,
+                filename_offset: filename_offset,
+            });
         }
         Ok((Sounds { sounds: sounds }, offsets))
     }
@@ -74,7 +79,8 @@ impl<'a> Chunk<'a> for Sounds {
         let writer_offset = writer.tell()? as u32;
         let sound_data_offset = writer_offset + (num_sounds * 4);
         for i in 0..num_sounds {
-            writer.write_u32::<LittleEndian>(sound_data_offset + (i * (9 * 4)))?;
+            writer
+                .write_u32::<LittleEndian>(sound_data_offset + (i * (9 * 4)))?;
         }
         for s in &self.sounds {
             // We'll write this later

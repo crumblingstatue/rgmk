@@ -3,14 +3,20 @@ use byteorder::{ReadBytesExt, WriteBytesExt, LittleEndian};
 use {GameDataRead, GameDataWrite, Sprite, Sprites};
 use gamedata_io::{Chunk, get_chunk_header, ReadError, read_into_byte_vec, Tell};
 
-pub(super) fn write_offsets<W: GameDataWrite>(sprites: &Sprites,
-                                              writer: &mut W,
-                                              string_offsets: &[u32])
-                                              -> io::Result<()> {
-    writer.seek(io::SeekFrom::Current(4 + (sprites.sprites.len() as i64 * 4)))?;
+pub(super) fn write_offsets<W: GameDataWrite>(
+    sprites: &Sprites,
+    writer: &mut W,
+    string_offsets: &[u32],
+) -> io::Result<()> {
+    writer
+        .seek(io::SeekFrom::Current(
+            4 + (sprites.sprites.len() as i64 * 4),
+        ))?;
     for s in &sprites.sprites {
-        writer.write_u32::<LittleEndian>(string_offsets[s.name_index])?;
-        writer.seek(io::SeekFrom::Current((2 * 4) + (s.unknown.len() as i64)))?;
+        writer
+            .write_u32::<LittleEndian>(string_offsets[s.name_index])?;
+        writer
+            .seek(io::SeekFrom::Current((2 * 4) + (s.unknown.len() as i64)))?;
     }
     Ok(())
 }
@@ -42,20 +48,22 @@ impl<'a> Chunk<'a> for Sprites {
             trace!("name: {} w: {} h: {}", name_offset, width, height);
             let reader_offset = reader.tell()? as usize;
             let next_offset = *sprite_offsets
-                                   .peek()
-                                   .unwrap_or(&((start_offset + header.size) - 4));
+                .peek()
+                .unwrap_or(&((start_offset + header.size) - 4));
             let remaining = next_offset - reader_offset;
-            trace!("At {}, Next offset is {}, reading remaining {} bytes",
-                   reader_offset,
-                   next_offset,
-                   remaining);
+            trace!(
+                "At {}, Next offset is {}, reading remaining {} bytes",
+                reader_offset,
+                next_offset,
+                remaining
+            );
             let data = read_into_byte_vec(reader, remaining)?;
             sprites.push(Sprite {
-                             name_index: 0,
-                             width: width,
-                             height: height,
-                             unknown: data,
-                         });
+                name_index: 0,
+                width: width,
+                height: height,
+                unknown: data,
+            });
         }
         Ok((Sprites { sprites: sprites }, name_offsets))
     }
