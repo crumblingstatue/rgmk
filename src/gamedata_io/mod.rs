@@ -352,9 +352,9 @@ macro_rules! unk_chunk {
             const TYPE_ID: &'static [u8; 4] = $typeid;
             type ReadOutput = Self;
             fn read<R: GameDataRead>(reader: &mut R) -> Result<Self::ReadOutput, ReadError> {
-                let chunk_header = try!(get_chunk_header(reader, Self::TYPE_ID));
+                let chunk_header = get_chunk_header(reader, Self::TYPE_ID)?;
                 Ok($name {
-                    raw: try!(read_into_byte_vec(reader, chunk_header.size))
+                    raw: read_into_byte_vec(reader, chunk_header.size)?
                 })
             }
             fn write_content<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
