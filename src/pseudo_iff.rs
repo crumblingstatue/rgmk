@@ -10,6 +10,8 @@ use {GameDataRead, GameDataWrite};
 // - One chunk type occurs exactly once.
 //
 // - Chunk order is important. We write back chunks in the same order we read them.
+//
+// - Chunks are aligned on even byte offsets. Padding bytes are always zero.
 
 /// A pseudo IFF-like format that Game Maker Studio uses.
 ///
