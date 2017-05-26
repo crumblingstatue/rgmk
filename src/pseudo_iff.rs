@@ -68,8 +68,7 @@ fn read_form_chunk<R: GameDataRead>(reader: &mut R) -> Result<Vec<Chunk>, Box<Er
 
     if &type_id[..] != b"FORM" {
         return Err(
-            "Invalid data.win file. Must start with a FORM chunk."
-                .into(),
+            "Invalid data.win file. Must start with a FORM chunk.".into(),
         );
     }
 
