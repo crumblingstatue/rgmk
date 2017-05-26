@@ -7,9 +7,33 @@ use {GameDataRead, GameDataWrite};
 //
 // - The root chunk is always a FORM chunk
 //
-// - One chunk type occurs exactly once.
+// - The chunks are the following in the following order
+//   (optional chunks are marked with parentheses):
 //
-// - Chunk order is important. We write back chunks in the same order we read them.
+//    1. GEN8
+//    2. OPTN
+//    3. EXTN
+//    4. SOND
+//    5. (AGRP)
+//    6. SPRT
+//    7. BGND
+//    8. PATH
+//    9. SCPT
+//   10. SHDR
+//   11. FONT
+//   12. TMLN
+//   13. OBJT
+//   14. ROOM
+//   15. DAFL
+//   16. TPAG
+//   17. CODE
+//   18. VARI
+//   19. FUNC
+//   20. STRG
+//   21. TXTR
+//   22. AUDO
+//   23. (LANG)
+//   24. (GLOB)
 //
 // - Chunks are aligned on even byte offsets. Padding bytes are always zero.
 
