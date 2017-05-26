@@ -1,10 +1,9 @@
 extern crate rgmk;
-extern crate env_logger;
 
 fn main() {
-    env_logger::init().unwrap();
-    let path = std::env::args().skip(1).next().expect(
+    let path = std::env::args().nth(1).expect(
         "Expected file name as argument",
     );
     let _f = rgmk::GameData::from_file(&path).unwrap();
+    eprintln!("Successfully read {}", path);
 }

@@ -1,15 +1,11 @@
 extern crate rgmk;
-extern crate byteorder;
-extern crate env_logger;
 
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufReader, BufWriter, Cursor};
 
 fn main() {
-    env_logger::init().unwrap();
-    let mut args = std::env::args().skip(1);
-    let path = args.next().expect("Expected path as argument");
+    let path = std::env::args().nth(1).expect("Expected path as argument");
     let original = {
         let mut file = File::open(&path).unwrap();
         let mut vec = Vec::new();
@@ -24,10 +20,7 @@ fn main() {
         .unwrap();
     for (i, (o, n)) in original[..].iter().zip(new[..].iter()).enumerate() {
         if o != n {
-            use byteorder::{ReadBytesExt, LittleEndian};
-            let orig = (&original[i..i + 4]).read_u32::<LittleEndian>().unwrap();
-            let new = (&new[i..i + 4]).read_u32::<LittleEndian>().unwrap();
-            panic!("Difference at offset {}. orig {} vs new {}", i, orig, new);
+            panic!("Difference at offset {}. orig {} vs new {}", i, o, n);
         }
     }
     eprintln!("Identity test successful for {}", path);
