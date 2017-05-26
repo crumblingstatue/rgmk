@@ -17,9 +17,11 @@ fn main() {
         vec
     };
     let game_data = rgmk::GameData::from_reader(&mut BufReader::new(Cursor::new(&original[..])))
-                        .unwrap_or_else(|e| panic!("Failed to read: {}", e));
+        .unwrap_or_else(|e| panic!("Failed to read: {}", e));
     let mut new: Vec<u8> = vec![0; original.len()];
-    game_data.write_to_writer(&mut BufWriter::new(Cursor::new(&mut new[..]))).unwrap();
+    game_data
+        .write_to_writer(&mut BufWriter::new(Cursor::new(&mut new[..])))
+        .unwrap();
     for (i, (o, n)) in original[..].iter().zip(new[..].iter()).enumerate() {
         if o != n {
             use byteorder::{ReadBytesExt, LittleEndian};
