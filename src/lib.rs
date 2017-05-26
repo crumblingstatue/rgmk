@@ -2,11 +2,7 @@
 
 #![warn(missing_docs, trivial_casts, trivial_numeric_casts)]
 
-#[macro_use]
-extern crate quick_error;
 extern crate byteorder;
-#[macro_use]
-extern crate log;
 
 mod pseudo_iff;
 
