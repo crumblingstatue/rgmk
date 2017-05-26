@@ -51,30 +51,30 @@ use {GameDataRead, GameDataWrite};
 /// and errors in the handling of individual chunks don't break the rest of the chunks.
 #[derive(Debug)]
 pub struct PseudoIff {
-    pub gen8: Vec<u8>,
-    pub optn: Vec<u8>,
-    pub extn: Vec<u8>,
-    pub sond: Vec<u8>,
-    pub agrp: Option<Vec<u8>>,
-    pub sprt: Vec<u8>,
-    pub bgnd: Vec<u8>,
-    pub path: Vec<u8>,
-    pub scpt: Vec<u8>,
-    pub shdr: Vec<u8>,
-    pub font: Vec<u8>,
-    pub tmln: Vec<u8>,
-    pub objt: Vec<u8>,
-    pub room: Vec<u8>,
-    pub dafl: Vec<u8>,
-    pub tpag: Vec<u8>,
-    pub code: Vec<u8>,
-    pub vari: Vec<u8>,
-    pub func: Vec<u8>,
-    pub strg: Vec<u8>,
-    pub txtr: Vec<u8>,
-    pub audo: Vec<u8>,
-    pub lang: Option<Vec<u8>>,
-    pub glob: Option<Vec<u8>>,
+    pub gen8: Box<[u8]>,
+    pub optn: Box<[u8]>,
+    pub extn: Box<[u8]>,
+    pub sond: Box<[u8]>,
+    pub agrp: Option<Box<[u8]>>,
+    pub sprt: Box<[u8]>,
+    pub bgnd: Box<[u8]>,
+    pub path: Box<[u8]>,
+    pub scpt: Box<[u8]>,
+    pub shdr: Box<[u8]>,
+    pub font: Box<[u8]>,
+    pub tmln: Box<[u8]>,
+    pub objt: Box<[u8]>,
+    pub room: Box<[u8]>,
+    pub dafl: Box<[u8]>,
+    pub tpag: Box<[u8]>,
+    pub code: Box<[u8]>,
+    pub vari: Box<[u8]>,
+    pub func: Box<[u8]>,
+    pub strg: Box<[u8]>,
+    pub txtr: Box<[u8]>,
+    pub audo: Box<[u8]>,
+    pub lang: Option<Box<[u8]>>,
+    pub glob: Option<Box<[u8]>>,
 }
 
 impl PseudoIff {
@@ -173,7 +173,7 @@ fn read_form_chunk<R: GameDataRead>(reader: &mut R) -> Result<(), Box<Error>> {
 fn read_opt_chunk<R: GameDataRead>(
     reader: &mut R,
     expected_type: &'static [u8; 4],
-) -> Result<Option<Vec<u8>>, Box<Error>> {
+) -> Result<Option<Box<[u8]>>, Box<Error>> {
     use std::io::ErrorKind;
 
     let mut type_id = [0; 4];
@@ -194,5 +194,5 @@ fn read_opt_chunk<R: GameDataRead>(
     let mut data = vec![0; size as usize];
     reader.read_exact(&mut data[..])?;
 
-    Ok(Some(data))
+    Ok(Some(data.into_boxed_slice()))
 }
