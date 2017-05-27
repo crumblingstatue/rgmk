@@ -18,16 +18,13 @@ pub struct GameData {
     iff: PseudoIff,
 }
 
-/// A reader that satisfies the requirements for reading a `GameData`.
-pub trait GameDataRead: Read + io::Seek {}
-impl<T: Read + io::Seek> GameDataRead for T {}
 /// A writer that satisfies the requirements for writing a `GameData`.
 pub trait GameDataWrite: Write + io::Seek {}
 impl<T: Write + io::Seek> GameDataWrite for T {}
 
 impl GameData {
     /// Reads a GameData from a reader.
-    pub fn from_reader<R: GameDataRead>(reader: &mut R) -> Result<GameData, Box<Error>> {
+    pub fn from_reader<R: Read>(reader: &mut R) -> Result<GameData, Box<Error>> {
         let iff = PseudoIff::load(reader)?;
         Ok(Self { iff })
     }

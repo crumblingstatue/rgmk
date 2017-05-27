@@ -1,7 +1,7 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
-use std::io::{self, SeekFrom};
-use {GameDataRead, GameDataWrite};
+use std::io::{self, SeekFrom, Read};
+use GameDataWrite;
 
 // A couple assumptions are made about the format.
 //
@@ -78,7 +78,7 @@ pub struct PseudoIff {
 }
 
 impl PseudoIff {
-    pub fn load<R: GameDataRead>(reader: &mut R) -> Result<Self, Box<Error>> {
+    pub fn load<R: Read>(reader: &mut R) -> Result<Self, Box<Error>> {
         read_form_chunk(reader)?;
         Ok(Self {
             gen8: read_opt_chunk(reader, b"GEN8")?.ok_or("missing GEN8 chunk")?,
@@ -157,7 +157,7 @@ impl PseudoIff {
     }
 }
 
-fn read_form_chunk<R: GameDataRead>(reader: &mut R) -> Result<(), Box<Error>> {
+fn read_form_chunk<R: Read>(reader: &mut R) -> Result<(), Box<Error>> {
     let mut type_id = [0; 4];
     reader.read_exact(&mut type_id)?;
     let _len = reader.read_i32::<LittleEndian>();
@@ -170,7 +170,7 @@ fn read_form_chunk<R: GameDataRead>(reader: &mut R) -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn read_opt_chunk<R: GameDataRead>(
+fn read_opt_chunk<R: Read>(
     reader: &mut R,
     expected_type: &'static [u8; 4],
 ) -> Result<Option<Box<[u8]>>, Box<Error>> {
