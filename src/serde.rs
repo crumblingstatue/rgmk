@@ -38,7 +38,7 @@
 //!    24. (GLOB)
 //!
 //! 3. Chunks are aligned on even byte offsets. Practically, we don't have to care about this,
-//!    due to (4.) and due to (5.) saving any alignment padding as trailing data.
+//!    due to (4.), and due to (5.) saving any alignment padding as trailing data.
 //!
 //! 4. You can rely on the fact that chunks always have sizes (indicated by their
 //!    IFF chunk size property) that land you on even alignment when reading,
