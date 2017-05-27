@@ -7,45 +7,46 @@
 //!
 //! A couple assumptions are made about the format.
 //!
-//! - The root chunk is always a FORM chunk
+//! 1. The root chunk is always a FORM chunk
 //!
-//! - The chunks are the following in the following order
-//!   (optional chunks are marked with parentheses):
+//! 2. The chunks are the following in the following order
+//!    (optional chunks are marked with parentheses):
 //!
-//!    1. GEN8
-//!    2. OPTN
-//!    3. EXTN
-//!    4. SOND
-//!    5. (AGRP)
-//!    6. SPRT
-//!    7. BGND
-//!    8. PATH
-//!    9. SCPT
-//!   10. SHDR
-//!   11. FONT
-//!   12. TMLN
-//!   13. OBJT
-//!   14. ROOM
-//!   15. DAFL
-//!   16. TPAG
-//!   17. CODE
-//!   18. VARI
-//!   19. FUNC
-//!   20. STRG
-//!   21. TXTR
-//!   22. AUDO
-//!   23. (LANG)
-//!   24. (GLOB)
+//!     1. GEN8
+//!     2. OPTN
+//!     3. EXTN
+//!     4. SOND
+//!     5. (AGRP)
+//!     6. SPRT
+//!     7. BGND
+//!     8. PATH
+//!     9. SCPT
+//!    10. SHDR
+//!    11. FONT
+//!    12. TMLN
+//!    13. OBJT
+//!    14. ROOM
+//!    15. DAFL
+//!    16. TPAG
+//!    17. CODE
+//!    18. VARI
+//!    19. FUNC
+//!    20. STRG
+//!    21. TXTR
+//!    22. AUDO
+//!    23. (LANG)
+//!    24. (GLOB)
 //!
-//! - Chunks are aligned on even byte offsets. Padding bytes are always zero.
+//! 3. Chunks are aligned on even byte offsets. Practically, we don't have to care about this,
+//!    due to (4.) and due to (5.) saving any alignment padding as trailing data.
 //!
-//! - You can rely on the fact that chunks always have sizes (indicated by their
-//!   IFF chunk size property) that land you on even alignment when reading,
-//!   so you don't have to manually adjust alignment.
+//! 4. You can rely on the fact that chunks always have sizes (indicated by their
+//!    IFF chunk size property) that land you on even alignment when reading,
+//!    so you don't have to manually adjust alignment.
 //!
-//! - You can't rely on any of the chunks (other than the root FORM) having a constant size,
-//!   that is, having the same size in every game. Therefore, unknown trailing data should be
-//!   read, and collected into a buffer that can be written back when serializing.
+//! 5. You can't rely on any of the chunks (other than the root FORM) having a constant size,
+//!    that is, having the same size in every game. Therefore, unknown trailing data should be
+//!    read, and collected into a buffer that can be written back when serializing.
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
