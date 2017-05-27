@@ -42,6 +42,10 @@
 //! - You can rely on the fact that chunks always have sizes (indicated by their
 //!   IFF chunk size property) that land you on even alignment when reading,
 //!   so you don't have to manually adjust alignment.
+//!
+//! - You can't rely on any of the chunks (other than the root FORM) having a constant size,
+//!   that is, having the same size in every game. Therefore, unknown trailing data should be
+//!   read, and collected into a buffer that can be written back when serializing.
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
