@@ -47,6 +47,15 @@
 //! 5. You can't rely on any of the chunks (other than the root FORM) having a constant size,
 //!    that is, having the same size in every game. Therefore, unknown trailing data should be
 //!    read, and collected into a buffer that can be written back when serializing.
+//!
+//! # Other observations
+//!
+//! AUDO and TXTR chunks are the leading cause of high memory usage, up to the point where
+//! a game cannot fully fit into memory because of them.
+//!
+//! Consider only storing information about the source of each item in these chunks.
+//! A source can be either an offset in the original data.win file, or it can be a replacement
+//! data in a file or in memory.
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
@@ -168,6 +177,7 @@ fn read_opt_chunk<R: Read>(
     let size = reader.read_i32::<LittleEndian>()?;
     let mut data = vec![0; size as usize];
     reader.read_exact(&mut data[..])?;
+    println!("{} => {}", ::std::str::from_utf8(&type_id[..]).unwrap(), size);
 
     Ok(Some(data.into_boxed_slice()))
 }
