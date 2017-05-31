@@ -7,7 +7,7 @@ extern crate byteorder;
 
 mod serde;
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read, Write, BufReader};
 use std::path;
 use std::error::Error;
 
@@ -35,11 +35,29 @@ pub struct GameData {
     pub vari: Box<[u8]>,
     pub func: Box<[u8]>,
     pub strg: Box<[u8]>,
-    pub txtr: Box<[u8]>,
+    pub txtr: Txtr,
     pub audo: Box<[u8]>,
     pub lang: Option<Box<[u8]>>,
     pub glob: Option<Box<[u8]>>,
 }
+
+pub struct Texture {
+    unknown: u32,
+    source: TextureSource,
+}
+
+pub enum TextureSource {
+    Original { offset: u64 },
+}
+
+pub struct Txtr {
+    textures: Vec<Texture>,
+    end_offset: u64,
+}
+
+/// A write that satisfies the requirements for reading a `GameData`.
+pub trait GameDataRead: Read + io::Seek {}
+impl<T: Read + io::Seek> GameDataRead for T {}
 
 /// A writer that satisfies the requirements for writing a `GameData`.
 pub trait GameDataWrite: Write + io::Seek {}
@@ -47,7 +65,7 @@ impl<T: Write + io::Seek> GameDataWrite for T {}
 
 impl GameData {
     /// Reads a GameData from a reader.
-    pub fn from_reader<R: Read>(reader: &mut R) -> Result<GameData, Box<Error>> {
+    pub fn from_reader<R: GameDataRead>(reader: &mut R) -> Result<GameData, Box<Error>> {
         serde::read_from(reader)
     }
     /// Reads a GameData from a file.
@@ -58,14 +76,23 @@ impl GameData {
         GameData::from_reader(&mut BufReader::new(file))
     }
     /// Writes self to a writer.
-    pub fn write_to_writer<W: GameDataWrite>(&self, writer: &mut W) -> io::Result<()> {
-        serde::write_to(self, writer)
+    pub fn write_to_writer<W: GameDataWrite, R: GameDataRead>(
+        &self,
+        writer: &mut W,
+        reader_orig: &mut R,
+    ) -> io::Result<()> {
+        serde::write_to(self, writer, reader_orig)
     }
     /// Writes self to a file.
-    pub fn save_to_file<P: AsRef<path::Path>>(&self, path: P) -> io::Result<()> {
+    pub fn save_to_file<P: AsRef<path::Path>, P2: AsRef<path::Path>>(
+        &self,
+        path: P,
+        path_of_orig: P2,
+    ) -> io::Result<()> {
         use std::fs::File;
         use std::io::BufWriter;
         let file = File::create(path)?;
-        self.write_to_writer(&mut BufWriter::new(file))
+        let file_orig = File::open(path_of_orig)?;
+        self.write_to_writer(&mut BufWriter::new(file), &mut BufReader::new(file_orig))
     }
 }

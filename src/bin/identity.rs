@@ -16,7 +16,10 @@ fn main() {
         .unwrap_or_else(|e| panic!("Failed to read: {}", e));
     let mut new: Vec<u8> = vec![0; original.len()];
     game_data
-        .write_to_writer(&mut BufWriter::new(Cursor::new(&mut new[..])))
+        .write_to_writer(
+            &mut BufWriter::new(Cursor::new(&mut new[..])),
+            &mut BufReader::new(Cursor::new(&original[..])),
+        )
         .unwrap();
     for (i, (o, n)) in original[..].iter().zip(new[..].iter()).enumerate() {
         if o != n {

@@ -57,12 +57,30 @@
 //! A source can be either an offset in the original data.win file, or it can be a replacement
 //! data in a file or in memory.
 
+mod txtr;
+
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::{self, SeekFrom, Read};
-use {GameData, GameDataWrite};
+use std::fmt;
+use super::*;
 
-pub fn read_from<R: Read>(reader: &mut R) -> Result<GameData, Box<Error>> {
+#[derive(Debug)]
+struct ChunkHeader {
+    type_id: [u8; 4],
+    size: u32,
+}
+
+impl ChunkHeader {
+    fn read<R: Read>(reader: &mut R) -> io::Result<Self> {
+        let mut type_id = [0; 4];
+        reader.read_exact(&mut type_id)?;
+        let size = reader.read_u32::<LittleEndian>()?;
+        Ok(Self { type_id, size })
+    }
+}
+
+pub fn read_from<R: GameDataRead>(reader: &mut R) -> Result<GameData, Box<Error>> {
     read_form_chunk(reader)?;
     Ok(GameData {
         gen8: read_opt_chunk(reader, b"GEN8")?.ok_or("missing GEN8 chunk")?,
@@ -85,21 +103,25 @@ pub fn read_from<R: Read>(reader: &mut R) -> Result<GameData, Box<Error>> {
         vari: read_opt_chunk(reader, b"VARI")?.ok_or("missing VARI chunk")?,
         func: read_opt_chunk(reader, b"FUNC")?.ok_or("missing FUNC chunk")?,
         strg: read_opt_chunk(reader, b"STRG")?.ok_or("missing STRG chunk")?,
-        txtr: read_opt_chunk(reader, b"TXTR")?.ok_or("missing TXTR chunk")?,
+        txtr: txtr::read(reader)?,
         audo: read_opt_chunk(reader, b"AUDO")?.ok_or("missing AUDO chunk")?,
         lang: read_opt_chunk(reader, b"LANG")?,
         glob: read_opt_chunk(reader, b"GLOB")?,
     })
 }
 
-pub fn write_to<W: GameDataWrite>(gdat: &GameData, writer: &mut W) -> io::Result<()> {
+pub fn write_to<W: GameDataWrite, R: GameDataRead>(
+    gdat: &GameData,
+    writer: &mut W,
+    reader_orig: &mut R,
+) -> io::Result<()> {
     writer.write_all(b"FORM")?;
     // Skip writing the FORM length, because we don't know it yet.
     let after_form_len = writer.seek(SeekFrom::Current(4))?;
     macro_rules! write {
         ($field:expr, $id:expr) => {
             writer.write_all($id)?;
-            writer.write_i32::<LittleEndian>($field.len() as i32)?;
+            writer.write_u32::<LittleEndian>($field.len() as u32)?;
             writer.write_all(&$field)?;
         }
     }
@@ -125,7 +147,7 @@ pub fn write_to<W: GameDataWrite>(gdat: &GameData, writer: &mut W) -> io::Result
     write!(gdat.vari, b"VARI");
     write!(gdat.func, b"FUNC");
     write!(gdat.strg, b"STRG");
-    write!(gdat.txtr, b"TXTR");
+    txtr::write(&gdat.txtr, writer, reader_orig)?;
     write!(gdat.audo, b"AUDO");
     if let Some(ref data) = gdat.lang {
         write!(data, b"LANG");
@@ -137,21 +159,66 @@ pub fn write_to<W: GameDataWrite>(gdat: &GameData, writer: &mut W) -> io::Result
     let form_len = end - after_form_len;
     // Finally write the form length
     writer.seek(SeekFrom::Start(after_form_len - 4))?;
-    writer.write_i32::<LittleEndian>(form_len as i32)?;
+    writer.write_u32::<LittleEndian>(form_len as u32)?;
     Ok(())
 }
 
-fn read_form_chunk<R: Read>(reader: &mut R) -> Result<(), Box<Error>> {
-    let mut type_id = [0; 4];
-    reader.read_exact(&mut type_id)?;
-    let _len = reader.read_i32::<LittleEndian>();
+fn read_form_chunk<R: Read>(reader: &mut R) -> Result<(), ChunkExpectError> {
+    expect_chunk(reader, b"FORM").map(|_| ())
+}
 
-    if &type_id[..] != b"FORM" {
-        return Err(
-            "Invalid data.win file. Must start with a FORM chunk.".into(),
-        );
+#[derive(Debug)]
+enum ChunkExpectError {
+    Io(io::Error),
+    UnexpectedChunk {
+        expected: [u8; 4],
+        found: ChunkHeader,
+    },
+}
+
+impl fmt::Display for ChunkExpectError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::ChunkExpectError::*;
+        match *self {
+            Io(ref err) => err.fmt(f),
+            UnexpectedChunk {
+                ref expected,
+                ref found,
+            } => {
+                write!(
+                    f,
+                    "Expected {} chunk, found {}",
+                    String::from_utf8_lossy(expected),
+                    String::from_utf8_lossy(&found.type_id)
+                )
+            }
+        }
     }
-    Ok(())
+}
+
+impl Error for ChunkExpectError {
+    fn description(&self) -> &str {
+        use self::ChunkExpectError::*;
+        match *self {
+            Io(ref err) => err.description(),
+            UnexpectedChunk { .. } => "unexpected chunk",
+        }
+    }
+}
+
+fn expect_chunk<R: Read>(
+    reader: &mut R,
+    expected_id: &'static [u8; 4],
+) -> Result<u32, ChunkExpectError> {
+    let header = ChunkHeader::read(reader).map_err(ChunkExpectError::Io)?;
+    if header.type_id[..] == *expected_id {
+        Ok(header.size)
+    } else {
+        Err(ChunkExpectError::UnexpectedChunk {
+            expected: *expected_id,
+            found: header,
+        })
+    }
 }
 
 fn read_opt_chunk<R: Read>(
@@ -174,10 +241,14 @@ fn read_opt_chunk<R: Read>(
         panic!("Optional chunks are not properly implemented.");
     }
 
-    let size = reader.read_i32::<LittleEndian>()?;
+    let size = reader.read_u32::<LittleEndian>()?;
     let mut data = vec![0; size as usize];
     reader.read_exact(&mut data[..])?;
-    println!("{} => {}", ::std::str::from_utf8(&type_id[..]).unwrap(), size);
+    println!(
+        "{} => {}",
+        ::std::str::from_utf8(&type_id[..]).unwrap(),
+        size
+    );
 
     Ok(Some(data.into_boxed_slice()))
 }
