@@ -6,6 +6,7 @@
 extern crate byteorder;
 
 mod serde;
+mod io_util;
 
 use std::io::{self, Read, Write, BufReader};
 use std::path;

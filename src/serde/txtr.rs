@@ -7,7 +7,7 @@ const TYPE_ID: &'static [u8; 4] = b"TXTR";
 pub fn read<R: GameDataRead>(reader: &mut R) -> Result<Txtr, Box<Error>> {
     let size = expect_chunk(reader, TYPE_ID)?;
     println!("Read size: {}", size);
-    let begin = reader.seek(SeekFrom::Current(0))?;
+    let begin = reader.tell()?;
     let num_textures = reader.read_u32::<LE>()?;
     // TODO: Here we assume these offsets are useless, because texture entries
     // are laid out sequentially right after these offsets.
@@ -17,10 +17,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<Txtr, Box<Error>> {
     }
     let mut textures = Vec::with_capacity(num_textures as usize);
     for _ in 0..num_textures {
-        println!(
-            "Read texture entry @ {}",
-            reader.seek(SeekFrom::Current(0))?
-        );
+        println!("Read texture entry @ {}", reader.tell()?);
         let unknown = reader.read_u32::<LE>()?;
         let offset = reader.read_u32::<LE>()?;
         println!("Read texture offset: {}", offset);
@@ -29,7 +26,7 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<Txtr, Box<Error>> {
             source: TextureSource::Original { offset: offset.into() },
         });
     }
-    let end = reader.seek(SeekFrom::Current(0))?;
+    let end = reader.tell()?;
     let total_read = end - begin;
     let true_end = reader.seek(
         SeekFrom::Current((size as u64 - total_read) as i64),
@@ -55,16 +52,13 @@ pub fn write<W: GameDataWrite, R: GameDataRead>(
     let after_offset_pos = writer.seek(SeekFrom::Current((len * 4) as i64))?;
     let mut offsets = Vec::with_capacity(len);
     for tex in &txtr.textures {
-        println!(
-            "Write texture entry @ {}",
-            writer.seek(SeekFrom::Current(0))?
-        );
-        offsets.push(writer.seek(SeekFrom::Current(0))?);
+        println!("Write texture entry @ {}", writer.tell()?);
+        offsets.push(writer.tell()?);
         writer.write_u32::<LE>(tex.unknown)?;
-        let data_offset_pos = writer.seek(SeekFrom::Current(0))?;
+        let data_offset_pos = writer.tell()?;
         // Skip over data offset, write it later.
         writer.seek(SeekFrom::Current(4))?;
-        let before_write_src = writer.seek(SeekFrom::Current(0))?;
+        let before_write_src = writer.tell()?;
         let data_offset = write_texture_source(&tex.source, writer, reader_orig)?;
         writer.seek(SeekFrom::Start(before_write_src))?;
         writer.seek(SeekFrom::Start(data_offset_pos))?;
@@ -105,7 +99,7 @@ pub fn write_texture_source<W: GameDataWrite, R: GameDataRead>(
 
 fn png_length<R: GameDataRead>(reader: &mut R) -> Result<u32, io::Error> {
     const MAGIC: [u8; 8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-    let reader_start = reader.seek(io::SeekFrom::Current(0))?;
+    let reader_start = reader.tell()?;
     let mut buf = [0u8; 8];
     reader.read_exact(&mut buf)?;
     assert_eq!(buf, MAGIC);
@@ -119,7 +113,7 @@ fn png_length<R: GameDataRead>(reader: &mut R) -> Result<u32, io::Error> {
             break;
         }
     }
-    let reader_end = reader.seek(io::SeekFrom::Current(0))?;
+    let reader_end = reader.tell()?;
     let length = reader_end - reader_start;
     reader.seek(io::SeekFrom::Start(reader_start))?;
     Ok(length as u32)

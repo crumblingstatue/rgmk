@@ -63,6 +63,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::{self, SeekFrom, Read};
 use std::fmt;
+use io_util::Tell;
 use super::*;
 
 #[derive(Debug)]
@@ -155,7 +156,7 @@ pub fn write_to<W: GameDataWrite, R: GameDataRead>(
     if let Some(ref data) = gdat.glob {
         write!(data, b"GLOB");
     }
-    let end = writer.seek(SeekFrom::Current(0))?;
+    let end = writer.tell()?;
     let form_len = end - after_form_len;
     // Finally write the form length
     writer.seek(SeekFrom::Start(after_form_len - 4))?;
