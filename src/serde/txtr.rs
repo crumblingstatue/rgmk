@@ -1,10 +1,11 @@
 use super::*;
 use super::LittleEndian as LE;
 use byteorder::BigEndian as BE;
+use std::io::Seek;
 
 const TYPE_ID: &'static [u8; 4] = b"TXTR";
 
-pub fn read<R: GameDataRead>(reader: &mut R) -> Result<Txtr, Box<Error>> {
+pub fn read(reader: &mut FileBufRead) -> Result<Txtr, Box<Error>> {
     let size = expect_chunk(reader, TYPE_ID)?;
     println!("Read size: {}", size);
     let begin = reader.tell()?;
@@ -37,10 +38,10 @@ pub fn read<R: GameDataRead>(reader: &mut R) -> Result<Txtr, Box<Error>> {
     })
 }
 
-pub fn write<W: GameDataWrite, R: GameDataRead>(
+pub fn write(
     txtr: &Txtr,
-    writer: &mut W,
-    reader_orig: &mut R,
+    writer: &mut FileBufWrite,
+    reader_orig: &mut FileBufRead,
 ) -> io::Result<()> {
     writer.write_all(TYPE_ID)?;
     // Write size of chunk later
@@ -80,10 +81,10 @@ pub fn write<W: GameDataWrite, R: GameDataRead>(
     Ok(())
 }
 
-pub fn write_texture_source<W: GameDataWrite, R: GameDataRead>(
+pub fn write_texture_source(
     source: &TextureSource,
-    writer: &mut W,
-    reader_orig: &mut R,
+    writer: &mut FileBufWrite,
+    reader_orig: &mut FileBufRead,
 ) -> io::Result<u64> {
     match *source {
         TextureSource::Original { offset } => {
@@ -97,7 +98,7 @@ pub fn write_texture_source<W: GameDataWrite, R: GameDataRead>(
     }
 }
 
-fn png_length<R: GameDataRead>(reader: &mut R) -> Result<u32, io::Error> {
+fn png_length(reader: &mut FileBufRead) -> Result<u32, io::Error> {
     const MAGIC: [u8; 8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
     let reader_start = reader.tell()?;
     let mut buf = [0u8; 8];

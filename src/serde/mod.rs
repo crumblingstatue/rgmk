@@ -61,7 +61,7 @@ mod txtr;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
-use std::io::{self, SeekFrom, Read};
+use std::io::{self, SeekFrom, Read, Seek, Write};
 use std::fmt;
 use io_util::Tell;
 use super::*;
@@ -73,7 +73,7 @@ struct ChunkHeader {
 }
 
 impl ChunkHeader {
-    fn read<R: Read>(reader: &mut R) -> io::Result<Self> {
+    fn read(reader: &mut FileBufRead) -> io::Result<Self> {
         let mut type_id = [0; 4];
         reader.read_exact(&mut type_id)?;
         let size = reader.read_u32::<LittleEndian>()?;
@@ -81,7 +81,7 @@ impl ChunkHeader {
     }
 }
 
-pub fn read_from<R: GameDataRead>(reader: &mut R) -> Result<GameData, Box<Error>> {
+pub fn read_from(reader: &mut FileBufRead) -> Result<GameData, Box<Error>> {
     read_form_chunk(reader)?;
     Ok(GameData {
         gen8: read_opt_chunk(reader, b"GEN8")?.ok_or("missing GEN8 chunk")?,
@@ -111,10 +111,10 @@ pub fn read_from<R: GameDataRead>(reader: &mut R) -> Result<GameData, Box<Error>
     })
 }
 
-pub fn write_to<W: GameDataWrite, R: GameDataRead>(
+pub fn write_to(
     gdat: &GameData,
-    writer: &mut W,
-    reader_orig: &mut R,
+    writer: &mut FileBufWrite,
+    reader_orig: &mut FileBufRead,
 ) -> io::Result<()> {
     writer.write_all(b"FORM")?;
     // Skip writing the FORM length, because we don't know it yet.
@@ -164,7 +164,7 @@ pub fn write_to<W: GameDataWrite, R: GameDataRead>(
     Ok(())
 }
 
-fn read_form_chunk<R: Read>(reader: &mut R) -> Result<(), ChunkExpectError> {
+fn read_form_chunk(reader: &mut FileBufRead) -> Result<(), ChunkExpectError> {
     expect_chunk(reader, b"FORM").map(|_| ())
 }
 
@@ -207,8 +207,8 @@ impl Error for ChunkExpectError {
     }
 }
 
-fn expect_chunk<R: Read>(
-    reader: &mut R,
+fn expect_chunk(
+    reader: &mut FileBufRead,
     expected_id: &'static [u8; 4],
 ) -> Result<u32, ChunkExpectError> {
     let header = ChunkHeader::read(reader).map_err(ChunkExpectError::Io)?;
@@ -222,8 +222,8 @@ fn expect_chunk<R: Read>(
     }
 }
 
-fn read_opt_chunk<R: Read>(
-    reader: &mut R,
+fn read_opt_chunk(
+    reader: &mut FileBufRead,
     expected_type: &'static [u8; 4],
 ) -> Result<Option<Box<[u8]>>, Box<Error>> {
     use std::io::ErrorKind;

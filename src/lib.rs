@@ -8,9 +8,10 @@ extern crate byteorder;
 mod serde;
 mod io_util;
 
-use std::io::{self, Read, Write, BufReader};
+use std::io::{self, BufReader, BufWriter};
 use std::path;
 use std::error::Error;
+use std::fs::File;
 
 /// The data of a Game Maker Studio game.
 ///
@@ -56,33 +57,14 @@ pub struct Txtr {
     end_offset: u64,
 }
 
-/// A write that satisfies the requirements for reading a `GameData`.
-pub trait GameDataRead: Read + io::Seek {}
-impl<T: Read + io::Seek> GameDataRead for T {}
-
-/// A writer that satisfies the requirements for writing a `GameData`.
-pub trait GameDataWrite: Write + io::Seek {}
-impl<T: Write + io::Seek> GameDataWrite for T {}
+type FileBufRead = BufReader<File>;
+type FileBufWrite = BufWriter<File>;
 
 impl GameData {
-    /// Reads a GameData from a reader.
-    pub fn from_reader<R: GameDataRead>(reader: &mut R) -> Result<GameData, Box<Error>> {
-        serde::read_from(reader)
-    }
     /// Reads a GameData from a file.
     pub fn from_file<P: AsRef<path::Path>>(path: P) -> Result<GameData, Box<Error>> {
-        use std::fs::File;
-        use std::io::BufReader;
         let file = File::open(path)?;
-        GameData::from_reader(&mut BufReader::new(file))
-    }
-    /// Writes self to a writer.
-    pub fn write_to_writer<W: GameDataWrite, R: GameDataRead>(
-        &self,
-        writer: &mut W,
-        reader_orig: &mut R,
-    ) -> io::Result<()> {
-        serde::write_to(self, writer, reader_orig)
+        serde::read_from(&mut BufReader::new(file))
     }
     /// Writes self to a file.
     pub fn save_to_file<P: AsRef<path::Path>, P2: AsRef<path::Path>>(
@@ -90,10 +72,12 @@ impl GameData {
         path: P,
         path_of_orig: P2,
     ) -> io::Result<()> {
-        use std::fs::File;
-        use std::io::BufWriter;
         let file = File::create(path)?;
         let file_orig = File::open(path_of_orig)?;
-        self.write_to_writer(&mut BufWriter::new(file), &mut BufReader::new(file_orig))
+        serde::write_to(
+            self,
+            &mut BufWriter::new(file),
+            &mut BufReader::new(file_orig),
+        )
     }
 }
