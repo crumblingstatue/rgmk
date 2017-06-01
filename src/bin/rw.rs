@@ -6,8 +6,8 @@ fn main() {
     let path = std::env::args().nth(1).expect(
         "Expected file name as argument",
     );
-    let f = rgmk::GameData::from_file(&path).unwrap();
-    f.save_to_file(&Path::new(&path).with_extension("new"), &path)
+    let mut f = rgmk::GameData::open(&path).unwrap();
+    f.save_to_file(&Path::new(&path).with_extension("new"))
         .unwrap();
     eprintln!("Successfully read/written {}", path);
 }

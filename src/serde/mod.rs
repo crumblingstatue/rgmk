@@ -81,41 +81,78 @@ impl ChunkHeader {
     }
 }
 
-pub fn read_from(reader: &mut FileBufRead) -> Result<GameData, Box<Error>> {
-    read_form_chunk(reader)?;
+pub fn open_and_read(mut reader: FileBufRead) -> Result<GameData, Box<Error>> {
+    read_form_chunk(&mut reader)?;
     Ok(GameData {
-        gen8: read_opt_chunk(reader, b"GEN8")?.ok_or("missing GEN8 chunk")?,
-        optn: read_opt_chunk(reader, b"OPTN")?.ok_or("missing OPTN chunk")?,
-        extn: read_opt_chunk(reader, b"EXTN")?.ok_or("missing EXTN chunk")?,
-        sond: read_opt_chunk(reader, b"SOND")?.ok_or("missing SOND chunk")?,
-        agrp: read_opt_chunk(reader, b"AGRP")?,
-        sprt: read_opt_chunk(reader, b"SPRT")?.ok_or("missing SPRT chunk")?,
-        bgnd: read_opt_chunk(reader, b"BGND")?.ok_or("missing BGND chunk")?,
-        path: read_opt_chunk(reader, b"PATH")?.ok_or("missing PATH chunk")?,
-        scpt: read_opt_chunk(reader, b"SCPT")?.ok_or("missing SCPT chunk")?,
-        shdr: read_opt_chunk(reader, b"SHDR")?.ok_or("missing SHDR chunk")?,
-        font: read_opt_chunk(reader, b"FONT")?.ok_or("missing FONT chunk")?,
-        tmln: read_opt_chunk(reader, b"TMLN")?.ok_or("missing TMLN chunk")?,
-        objt: read_opt_chunk(reader, b"OBJT")?.ok_or("missing OBJT chunk")?,
-        room: read_opt_chunk(reader, b"ROOM")?.ok_or("missing ROOM chunk")?,
-        dafl: read_opt_chunk(reader, b"DAFL")?.ok_or("missing DAFL chunk")?,
-        tpag: read_opt_chunk(reader, b"TPAG")?.ok_or("missing TPAG chunk")?,
-        code: read_opt_chunk(reader, b"CODE")?.ok_or("missing CODE chunk")?,
-        vari: read_opt_chunk(reader, b"VARI")?.ok_or("missing VARI chunk")?,
-        func: read_opt_chunk(reader, b"FUNC")?.ok_or("missing FUNC chunk")?,
-        strg: read_opt_chunk(reader, b"STRG")?.ok_or("missing STRG chunk")?,
-        txtr: txtr::read(reader)?,
-        audo: read_opt_chunk(reader, b"AUDO")?.ok_or("missing AUDO chunk")?,
-        lang: read_opt_chunk(reader, b"LANG")?,
-        glob: read_opt_chunk(reader, b"GLOB")?,
+        gen8: read_opt_chunk(&mut reader, b"GEN8")?.ok_or(
+            "missing GEN8 chunk",
+        )?,
+        optn: read_opt_chunk(&mut reader, b"OPTN")?.ok_or(
+            "missing OPTN chunk",
+        )?,
+        extn: read_opt_chunk(&mut reader, b"EXTN")?.ok_or(
+            "missing EXTN chunk",
+        )?,
+        sond: read_opt_chunk(&mut reader, b"SOND")?.ok_or(
+            "missing SOND chunk",
+        )?,
+        agrp: read_opt_chunk(&mut reader, b"AGRP")?,
+        sprt: read_opt_chunk(&mut reader, b"SPRT")?.ok_or(
+            "missing SPRT chunk",
+        )?,
+        bgnd: read_opt_chunk(&mut reader, b"BGND")?.ok_or(
+            "missing BGND chunk",
+        )?,
+        path: read_opt_chunk(&mut reader, b"PATH")?.ok_or(
+            "missing PATH chunk",
+        )?,
+        scpt: read_opt_chunk(&mut reader, b"SCPT")?.ok_or(
+            "missing SCPT chunk",
+        )?,
+        shdr: read_opt_chunk(&mut reader, b"SHDR")?.ok_or(
+            "missing SHDR chunk",
+        )?,
+        font: read_opt_chunk(&mut reader, b"FONT")?.ok_or(
+            "missing FONT chunk",
+        )?,
+        tmln: read_opt_chunk(&mut reader, b"TMLN")?.ok_or(
+            "missing TMLN chunk",
+        )?,
+        objt: read_opt_chunk(&mut reader, b"OBJT")?.ok_or(
+            "missing OBJT chunk",
+        )?,
+        room: read_opt_chunk(&mut reader, b"ROOM")?.ok_or(
+            "missing ROOM chunk",
+        )?,
+        dafl: read_opt_chunk(&mut reader, b"DAFL")?.ok_or(
+            "missing DAFL chunk",
+        )?,
+        tpag: read_opt_chunk(&mut reader, b"TPAG")?.ok_or(
+            "missing TPAG chunk",
+        )?,
+        code: read_opt_chunk(&mut reader, b"CODE")?.ok_or(
+            "missing CODE chunk",
+        )?,
+        vari: read_opt_chunk(&mut reader, b"VARI")?.ok_or(
+            "missing VARI chunk",
+        )?,
+        func: read_opt_chunk(&mut reader, b"FUNC")?.ok_or(
+            "missing FUNC chunk",
+        )?,
+        strg: read_opt_chunk(&mut reader, b"STRG")?.ok_or(
+            "missing STRG chunk",
+        )?,
+        txtr: txtr::read(&mut reader)?,
+        audo: read_opt_chunk(&mut reader, b"AUDO")?.ok_or(
+            "missing AUDO chunk",
+        )?,
+        lang: read_opt_chunk(&mut reader, b"LANG")?,
+        glob: read_opt_chunk(&mut reader, b"GLOB")?,
+        reader,
     })
 }
 
-pub fn write_to(
-    gdat: &GameData,
-    writer: &mut FileBufWrite,
-    reader_orig: &mut FileBufRead,
-) -> io::Result<()> {
+pub fn write_to(gdat: &mut GameData, writer: &mut FileBufWrite) -> io::Result<()> {
     writer.write_all(b"FORM")?;
     // Skip writing the FORM length, because we don't know it yet.
     let after_form_len = writer.seek(SeekFrom::Current(4))?;
@@ -148,7 +185,7 @@ pub fn write_to(
     write!(gdat.vari, b"VARI");
     write!(gdat.func, b"FUNC");
     write!(gdat.strg, b"STRG");
-    txtr::write(&gdat.txtr, writer, reader_orig)?;
+    txtr::write(&gdat.txtr, writer, &mut gdat.reader)?;
     write!(gdat.audo, b"AUDO");
     if let Some(ref data) = gdat.lang {
         write!(data, b"LANG");

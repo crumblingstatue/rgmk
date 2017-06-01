@@ -41,6 +41,7 @@ pub struct GameData {
     pub audo: Box<[u8]>,
     pub lang: Option<Box<[u8]>>,
     pub glob: Option<Box<[u8]>>,
+    reader: FileBufRead,
 }
 
 pub struct Texture {
@@ -62,22 +63,13 @@ type FileBufWrite = BufWriter<File>;
 
 impl GameData {
     /// Reads a GameData from a file.
-    pub fn from_file<P: AsRef<path::Path>>(path: P) -> Result<GameData, Box<Error>> {
+    pub fn open<P: AsRef<path::Path>>(path: P) -> Result<GameData, Box<Error>> {
         let file = File::open(path)?;
-        serde::read_from(&mut BufReader::new(file))
+        serde::open_and_read(BufReader::new(file))
     }
     /// Writes self to a file.
-    pub fn save_to_file<P: AsRef<path::Path>, P2: AsRef<path::Path>>(
-        &self,
-        path: P,
-        path_of_orig: P2,
-    ) -> io::Result<()> {
+    pub fn save_to_file<P: AsRef<path::Path>>(&mut self, path: P) -> io::Result<()> {
         let file = File::create(path)?;
-        let file_orig = File::open(path_of_orig)?;
-        serde::write_to(
-            self,
-            &mut BufWriter::new(file),
-            &mut BufReader::new(file_orig),
-        )
+        serde::write_to(self, &mut BufWriter::new(file))
     }
 }
