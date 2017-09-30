@@ -24,14 +24,14 @@ pub fn read(reader: &mut FileBufRead) -> Result<Txtr, Box<Error>> {
         println!("Read texture offset: {}", offset);
         textures.push(Texture {
             unknown,
-            source: TextureSource::Original { offset: offset.into() },
+            source: TextureSource::Original {
+                offset: offset.into(),
+            },
         });
     }
     let end = reader.tell()?;
     let total_read = end - begin;
-    let true_end = reader.seek(
-        SeekFrom::Current((size as u64 - total_read) as i64),
-    )?;
+    let true_end = reader.seek(SeekFrom::Current((size as u64 - total_read) as i64))?;
     Ok(Txtr {
         textures,
         end_offset: true_end,
@@ -71,9 +71,7 @@ pub fn write(
     println!("Write size: {}", size);
     writer.seek(SeekFrom::Start(after_size_pos - 4))?;
     writer.write_u32::<LE>(size as u32)?;
-    writer.seek(
-        SeekFrom::Start(after_offset_pos - (len * 4) as u64),
-    )?;
+    writer.seek(SeekFrom::Start(after_offset_pos - (len * 4) as u64))?;
     for &offset in &offsets {
         writer.write_u32::<LE>(offset as u32)?;
     }

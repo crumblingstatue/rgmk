@@ -61,7 +61,7 @@ mod txtr;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
-use std::io::{self, SeekFrom, Read, Seek, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::fmt;
 use io_util::Tell;
 use super::*;
@@ -84,68 +84,28 @@ impl ChunkHeader {
 pub fn open_and_read(mut reader: FileBufRead) -> Result<GameData, Box<Error>> {
     read_form_chunk(&mut reader)?;
     Ok(GameData {
-        gen8: read_opt_chunk(&mut reader, b"GEN8")?.ok_or(
-            "missing GEN8 chunk",
-        )?,
-        optn: read_opt_chunk(&mut reader, b"OPTN")?.ok_or(
-            "missing OPTN chunk",
-        )?,
-        extn: read_opt_chunk(&mut reader, b"EXTN")?.ok_or(
-            "missing EXTN chunk",
-        )?,
-        sond: read_opt_chunk(&mut reader, b"SOND")?.ok_or(
-            "missing SOND chunk",
-        )?,
+        gen8: read_opt_chunk(&mut reader, b"GEN8")?.ok_or("missing GEN8 chunk")?,
+        optn: read_opt_chunk(&mut reader, b"OPTN")?.ok_or("missing OPTN chunk")?,
+        extn: read_opt_chunk(&mut reader, b"EXTN")?.ok_or("missing EXTN chunk")?,
+        sond: read_opt_chunk(&mut reader, b"SOND")?.ok_or("missing SOND chunk")?,
         agrp: read_opt_chunk(&mut reader, b"AGRP")?,
-        sprt: read_opt_chunk(&mut reader, b"SPRT")?.ok_or(
-            "missing SPRT chunk",
-        )?,
-        bgnd: read_opt_chunk(&mut reader, b"BGND")?.ok_or(
-            "missing BGND chunk",
-        )?,
-        path: read_opt_chunk(&mut reader, b"PATH")?.ok_or(
-            "missing PATH chunk",
-        )?,
-        scpt: read_opt_chunk(&mut reader, b"SCPT")?.ok_or(
-            "missing SCPT chunk",
-        )?,
-        shdr: read_opt_chunk(&mut reader, b"SHDR")?.ok_or(
-            "missing SHDR chunk",
-        )?,
-        font: read_opt_chunk(&mut reader, b"FONT")?.ok_or(
-            "missing FONT chunk",
-        )?,
-        tmln: read_opt_chunk(&mut reader, b"TMLN")?.ok_or(
-            "missing TMLN chunk",
-        )?,
-        objt: read_opt_chunk(&mut reader, b"OBJT")?.ok_or(
-            "missing OBJT chunk",
-        )?,
-        room: read_opt_chunk(&mut reader, b"ROOM")?.ok_or(
-            "missing ROOM chunk",
-        )?,
-        dafl: read_opt_chunk(&mut reader, b"DAFL")?.ok_or(
-            "missing DAFL chunk",
-        )?,
-        tpag: read_opt_chunk(&mut reader, b"TPAG")?.ok_or(
-            "missing TPAG chunk",
-        )?,
-        code: read_opt_chunk(&mut reader, b"CODE")?.ok_or(
-            "missing CODE chunk",
-        )?,
-        vari: read_opt_chunk(&mut reader, b"VARI")?.ok_or(
-            "missing VARI chunk",
-        )?,
-        func: read_opt_chunk(&mut reader, b"FUNC")?.ok_or(
-            "missing FUNC chunk",
-        )?,
-        strg: read_opt_chunk(&mut reader, b"STRG")?.ok_or(
-            "missing STRG chunk",
-        )?,
+        sprt: read_opt_chunk(&mut reader, b"SPRT")?.ok_or("missing SPRT chunk")?,
+        bgnd: read_opt_chunk(&mut reader, b"BGND")?.ok_or("missing BGND chunk")?,
+        path: read_opt_chunk(&mut reader, b"PATH")?.ok_or("missing PATH chunk")?,
+        scpt: read_opt_chunk(&mut reader, b"SCPT")?.ok_or("missing SCPT chunk")?,
+        shdr: read_opt_chunk(&mut reader, b"SHDR")?.ok_or("missing SHDR chunk")?,
+        font: read_opt_chunk(&mut reader, b"FONT")?.ok_or("missing FONT chunk")?,
+        tmln: read_opt_chunk(&mut reader, b"TMLN")?.ok_or("missing TMLN chunk")?,
+        objt: read_opt_chunk(&mut reader, b"OBJT")?.ok_or("missing OBJT chunk")?,
+        room: read_opt_chunk(&mut reader, b"ROOM")?.ok_or("missing ROOM chunk")?,
+        dafl: read_opt_chunk(&mut reader, b"DAFL")?.ok_or("missing DAFL chunk")?,
+        tpag: read_opt_chunk(&mut reader, b"TPAG")?.ok_or("missing TPAG chunk")?,
+        code: read_opt_chunk(&mut reader, b"CODE")?.ok_or("missing CODE chunk")?,
+        vari: read_opt_chunk(&mut reader, b"VARI")?.ok_or("missing VARI chunk")?,
+        func: read_opt_chunk(&mut reader, b"FUNC")?.ok_or("missing FUNC chunk")?,
+        strg: read_opt_chunk(&mut reader, b"STRG")?.ok_or("missing STRG chunk")?,
         txtr: txtr::read(&mut reader)?,
-        audo: read_opt_chunk(&mut reader, b"AUDO")?.ok_or(
-            "missing AUDO chunk",
-        )?,
+        audo: read_opt_chunk(&mut reader, b"AUDO")?.ok_or("missing AUDO chunk")?,
         lang: read_opt_chunk(&mut reader, b"LANG")?,
         glob: read_opt_chunk(&mut reader, b"GLOB")?,
         reader,
@@ -222,14 +182,12 @@ impl fmt::Display for ChunkExpectError {
             UnexpectedChunk {
                 ref expected,
                 ref found,
-            } => {
-                write!(
-                    f,
-                    "Expected {} chunk, found {}",
-                    String::from_utf8_lossy(expected),
-                    String::from_utf8_lossy(&found.type_id)
-                )
-            }
+            } => write!(
+                f,
+                "Expected {} chunk, found {}",
+                String::from_utf8_lossy(expected),
+                String::from_utf8_lossy(&found.type_id)
+            ),
         }
     }
 }
