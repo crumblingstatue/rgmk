@@ -31,7 +31,7 @@ pub fn read(reader: &mut FileBufRead) -> Result<Txtr, Box<Error>> {
     }
     let end = reader.tell()?;
     let total_read = end - begin;
-    let true_end = reader.seek(SeekFrom::Current((size as u64 - total_read) as i64))?;
+    let true_end = reader.seek(SeekFrom::Current((u64::from(size) - total_read) as i64))?;
     Ok(Txtr {
         textures,
         end_offset: true_end,
@@ -107,7 +107,7 @@ fn png_length(reader: &mut FileBufRead) -> Result<u32, io::Error> {
         let mut chunk_type = [0u8; 4];
         reader.read_exact(&mut chunk_type)?;
         let crc_len = 4;
-        reader.seek(io::SeekFrom::Current(length as i64 + crc_len))?;
+        reader.seek(io::SeekFrom::Current(i64::from(length) + crc_len))?;
         if chunk_type == *b"IEND" {
             break;
         }
